@@ -49,6 +49,11 @@ Sütunların sırası vacib deyil — başlıqlar adlarına görə tapılır. K�
 
 ## Telefona quraşdırma
 
+### iPhone — veb-tətbiq (pulsuz)
+1. Hər dəyişiklikdən sonra `static.yml` işi veb-tətbiqi avtomatik yeniləyir: https://elekberoglu.github.io/cbc-sport-broadcast/www/
+2. iPhone-da Safari ilə bu linki açın → **Paylaş** → **Ana ekrana əlavə et**.
+   Qeyd: veb-tətbiqdə yığışma xatırlatması yalnız tətbiq açıq olanda gəlir.
+
 ### Ən asan yol — GitHub Actions (kompüterə heç nə qurmadan)
 1. Bu qovluğu yeni GitHub repozitoriyasına yükləyin.
 2. **Actions** bölməsində "Build CBC Sport Broadcast" avtomatik işə düşəcək (~10 dəq).

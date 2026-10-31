@@ -103,3 +103,13 @@ html, body, .bg-white, .bg-gray-50, .bg-gray-100 { transition: background-color 
 .dark .bg-gray-500 { background-color: #9ca3af; }
 details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }
+
+/* ===== Əsas əməliyyat kartları ===== */
+.action-card { display: block; }
+.action-icon { display: inline-flex; width: 40px; height: 40px; border-radius: 12px; align-items: center; justify-content: center; font-size: 18px; background: #f3f4f6; }
+.action-primary { background: #ecfdf5; border-color: #a7f3d0; }
+.action-primary .action-icon { background: #d1fae5; color: #059669; }
+.dark .action-primary { background: rgba(5, 150, 105, .12); border-color: rgba(16, 185, 129, .35); }
+.dark .action-primary .action-icon { background: rgba(16, 185, 129, .18); color: #34d399; }
+.dark .action-icon { background: #374151; }
+.dark .action-icon.text-gray-700 { color: #e5e7eb; }

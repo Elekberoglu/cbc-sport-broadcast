@@ -1239,6 +1239,9 @@
     --tw-outline-style: none;
     outline-style: none;
   }
+  .active\:scale-\[\.98\]:active {
+    scale: .98;
+  }
   .active\:bg-amber-100:active {
     background-color: var(--color-amber-100);
   }
@@ -1614,6 +1617,41 @@ details > summary {
 }
 details > summary::-webkit-details-marker {
   display: none;
+}
+.action-card {
+  display: block;
+}
+.action-icon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: #f3f4f6;
+}
+.action-primary {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+.action-primary .action-icon {
+  background: #d1fae5;
+  color: #059669;
+}
+.dark .action-primary {
+  background: rgba(5, 150, 105, .12);
+  border-color: rgba(16, 185, 129, .35);
+}
+.dark .action-primary .action-icon {
+  background: rgba(16, 185, 129, .18);
+  color: #34d399;
+}
+.dark .action-icon {
+  background: #374151;
+}
+.dark .action-icon.text-gray-700 {
+  color: #e5e7eb;
 }
 @property --tw-translate-x {
   syntax: "*";

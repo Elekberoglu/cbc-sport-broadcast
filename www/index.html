@@ -10,7 +10,7 @@
     <title>CBC Sport Broadcast</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="css/app.css">
     <script>
@@ -43,8 +43,8 @@
                     <div class="min-w-0 flex-1 pt-0.5">
                         <button id="profile-btn" class="text-left w-full">
                             <h1 id="profile-name" class="font-bold text-gray-900 leading-tight whitespace-nowrap" style="font-size:17px">—</h1>
-                            <p class="text-xs text-blue-600 font-semibold flex items-center gap-1"><span id="profile-role">—</span><i class="fa-solid fa-pen text-[9px] text-gray-300"></i></p>
-                        </button>
+                            </button>
+                        <button id="role-btn" class="text-xs text-blue-600 font-semibold flex items-center gap-1 text-left"><span id="profile-role">—</span><i class="fa-solid fa-pen text-[9px] text-gray-300"></i></button>
                         <button id="version-label" class="hidden text-[10px] text-blue-600 bg-blue-50 rounded-full px-2 py-0.5 font-semibold mt-1"></button>
                     </div>
                 </div>
@@ -53,10 +53,6 @@
                     <button id="open-stats" class="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:bg-blue-100 transition flex items-center gap-1 text-xs font-semibold" aria-label="Statistika">
                         <i class="fa-solid fa-chart-pie text-sm"></i>
                         <span class="hidden sm:inline">Statistika</span>
-                    </button>
-                    <button id="open-upload" class="p-2.5 bg-blue-600 text-white rounded-xl active:bg-blue-700 transition flex items-center gap-1 text-xs font-semibold shadow">
-                        <i class="fa-solid fa-file-arrow-up text-sm"></i>
-                        <span>Yüklə</span>
                     </button>
                 </div>
             </div>
@@ -79,11 +75,21 @@
         <!-- MY SCHEDULE -->
         <section id="section-my" class="space-y-4">
 
+            <div class="grid grid-cols-2 gap-3">
+                <button id="open-upload" class="action-card action-primary rounded-2xl p-4 text-center border shadow-sm transition active:scale-[.98]">
+                    <span class="action-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
+                    <span class="block font-bold text-sm text-gray-900 mt-2">Qrafik yüklə</span>
+                    <span class="block text-[11px] text-gray-500 mt-1 leading-snug">Excel faylından avtomatik</span>
+                </button>
+                <button id="add-shoot" class="action-card rounded-2xl p-4 text-center border bg-white border-gray-100 shadow-sm transition active:scale-[.98]">
+                    <span class="action-icon text-gray-700"><i class="fa-regular fa-pen-to-square"></i></span>
+                    <span class="block font-bold text-sm text-gray-900 mt-2">Qrafik yarat</span>
+                    <span class="block text-[11px] text-gray-500 mt-1 leading-snug">Məlumatları özün daxil et</span>
+                </button>
+            </div>
+
             <div class="flex justify-between items-center px-1">
                 <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Həftəlik Çəkiliş Cədvəli</h2>
-                <button id="add-shoot" class="text-xs text-blue-600 font-semibold flex items-center">
-                    <i class="fa-solid fa-plus mr-1"></i> Əllə əlavə et
-                </button>
             </div>
 
             <div id="schedule-list" class="space-y-3"></div>
@@ -126,7 +132,7 @@
         <!-- FOOTER -->
         <footer class="pt-6 pb-2 text-center border-t border-gray-200">
             <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
-            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.5.1</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.6.1</p>
         </footer>
     </main>
 
@@ -258,14 +264,11 @@
             <p class="text-gray-500 leading-relaxed">Adınız qrafikdə necə yazılıbsa, elə daxil edin. "Cədvəlim" bölməsi bu ada görə süzülür.</p>
             <div>
                 <label for="pf-name" class="font-medium text-gray-700 block mb-1">Soyad Ad</label>
-                <input id="pf-name" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Hüseynov Tamerlan">
+                <input id="pf-name" required autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
             </div>
             <div>
                 <label for="pf-role" class="font-medium text-gray-700 block mb-1">Vəzifə</label>
-                <input id="pf-role" list="role-list" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Rejissor">
-                <datalist id="role-list">
-                    <option value="Rejissor"><option value="Texniki direktor"><option value="Təkrar operator"><option value="Səs mühəndisi"><option value="Operator"><option value="STS rəhbəri"><option value="Texniki inzibatçı"><option value="Qrafika operatoru">
-                </datalist>
+                <input id="pf-role" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
             </div>
             <div>
                 <span class="font-medium text-gray-700 block mb-1">Görünüş rejimi</span>
@@ -425,15 +428,11 @@
                     <p class="text-[11px] text-gray-400 mt-1">Qrafikdə necə yazılıbsa, elə yazın (məs: Məmmədov İlham).</p>
                     <p id="ob-err" class="hidden text-[11px] text-red-600 mt-1"></p>
                 </div>
-                <div>
-                    <label for="ob-role" class="font-medium text-gray-700 block mb-1">Vəzifə</label>
-                    <input id="ob-role" list="role-list" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-3 bg-gray-50 text-base">
-                </div>
                 <button type="submit" class="w-full bg-blue-600 text-white text-sm font-bold py-3.5 rounded-xl shadow active:bg-blue-700">Davam et <i class="fa-solid fa-arrow-right ml-1"></i></button>
             </form>
             <ol class="text-xs text-gray-500 mt-6 space-y-2 px-1">
                 <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">1</span>Adınızı və soyadınızı yazın</li>
-                <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">2</span><strong>Yüklə</strong> ilə həftəlik Excel qrafikini seçin</li>
+                <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">2</span><strong>Qrafik yüklə</strong> ilə həftəlik Excel qrafikini seçin</li>
                 <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">3</span>Yalnız öz çəkilişlərinizi görəcəksiniz</li>
             </ol>
         </div>

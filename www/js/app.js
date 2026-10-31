@@ -97,7 +97,7 @@
         $('profile-name').textContent = state.profile.name || 'Adınızı daxil edin';
         $('clear-all').classList.toggle('hidden', !state.shoots.length);
         fitName();
-        $('profile-role').textContent = state.profile.role || 'Vəzifə';
+        $('profile-role').textContent = state.profile.role || 'Vəzifəni daxil et';
         const av = $('avatar-container');
         if (state.profile.avatar) av.innerHTML = '<img src="' + state.profile.avatar + '" alt="" class="w-full h-full object-cover">';
         else av.textContent = state.profile.name ? C.initials(state.profile.name) : '?';
@@ -247,7 +247,7 @@
             list.innerHTML = '<div class="bg-white rounded-2xl p-6 text-center border border-dashed border-gray-300">' +
                 '<i class="fa-regular fa-calendar-xmark text-3xl text-gray-300 mb-2"></i>' +
                 '<p class="text-sm font-semibold text-gray-600">Hələ çəkiliş yoxdur</p>' +
-                '<p class="text-xs text-gray-400 mt-1">"Yüklə" düyməsi ilə Excel qrafikini seçin və ya çəkilişi "Əllə əlavə et" ilə yazın.</p>' +
+                '<p class="text-xs text-gray-400 mt-1">"Qrafik yüklə" ilə Excel faylını seçin və ya "Qrafik yarat" ilə çəkilişi özünüz daxil edin.</p>' +
                 '</div>';
         } else {
             let html = active.map((s, i) => cardHTML(s, { next: i === 0 })).join('');
@@ -680,7 +680,6 @@
     // ---------- İlk giriş ----------
     function showOnboarding() {
         $('ob-name').value = state.profile.name || '';
-        $('ob-role').value = state.profile.role || '';
         $('onboard').classList.remove('hidden');
         setTimeout(() => $('ob-name').focus(), 300);
     }
@@ -696,7 +695,6 @@
         }
         err.classList.add('hidden'); $('ob-name').classList.remove('field-error');
         state.profile.name = name;
-        state.profile.role = $('ob-role').value.trim();
         save();
         $('onboard').classList.add('hidden');
         refresh();
@@ -792,7 +790,7 @@
                 state.meta.image = await resizeImage(file, 1800, 0.82);
                 save();
                 renderHistory();
-                showUploadResult('warn', '<i class="fa-solid fa-triangle-exclamation mr-1"></i><strong>Şəkildən avtomatik oxuma hələ mövcud deyil.</strong><br>Şəkil yalnız baxmaq üçün saxlanıldı, heç bir çəkiliş idxal olunmadı. Çəkilişləri "Əllə əlavə et" ilə yaza və ya qrafiki Excel (.xlsx) formatında yükləyə bilərsiniz.');
+                showUploadResult('warn', '<i class="fa-solid fa-triangle-exclamation mr-1"></i><strong>Şəkildən avtomatik oxuma hələ mövcud deyil.</strong><br>Şəkil yalnız baxmaq üçün saxlanıldı, heç bir çəkiliş idxal olunmadı. Çəkilişləri "Qrafik yarat" ilə yaza və ya qrafiki Excel (.xlsx) formatında yükləyə bilərsiniz.');
                 return;
             }
             let sheets;
@@ -835,18 +833,16 @@
     }
 
     function finishImport(res, name) {
-        {
-            const r = applyNewSchedule(res, name);
-            const d = r.diff;
-            showUploadResult('ok',
-                '<i class="fa-solid fa-circle-check mr-1"></i><strong>Qrafik v' + r.version + ' təsdiqləndi.</strong><br>' +
-                'Dövr: ' + C.fmtDMY(r.period[0]) + ' – ' + C.fmtDMY(r.period[1]) + '. Sizin üçün <strong>' + r.newMine.length + '</strong> çəkiliş göstərilir.' +
-                (r.prevVersion ? '<br>Əvvəlki versiya (v' + r.prevVersion + ') ilə müqayisə: ' + d.added + ' yeni, ' + d.changed + ' dəyişən, ' + d.removed + ' silinən.' +
-                    (d.details.length ? '<div class="mt-1.5 space-y-0.5 text-[11px]">' + d.details.slice(0, 8).map(x => '<div>' + C.esc(x) + '</div>').join('') + '</div>' : '') : '') +
-                (res.warnings.length ? '<br><span class="text-amber-700">⚠ ' + C.esc(res.warnings.join(' ')) + '</span>' : ''));
-            renderHistory();
-            refresh();
-        }
+        const r = applyNewSchedule(res, name);
+        const d = r.diff;
+        // Uğurlu təsdiqdən sonra pəncərə bağlanır, nəticə qısa bildirişlə göstərilir
+        closeModal('upload-modal');
+        closeModal('confirm-modal');
+        refresh();
+        let msg = '✅ Qrafik v' + r.version + ' təsdiqləndi · sizin üçün ' + r.newMine.length + ' çəkiliş';
+        if (r.prevVersion) msg += ' · ' + d.added + ' yeni, ' + d.changed + ' dəyişən, ' + d.removed + ' silinən';
+        toast(msg, 4500);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // ---------- Bildirişlər ----------
@@ -976,7 +972,9 @@
             try { state.profile.avatar = await resizeImage(f, 256, 0.85); save(); renderProfile(); }
             catch (err) { toast('Şəkil oxunmadı'); }
         };
-        $('profile-btn').onclick = () => { $('pf-name').value = state.profile.name; $('pf-role').value = state.profile.role; openModal('profile-modal'); };
+        const openProfile = focusId => { $('pf-name').value = state.profile.name; $('pf-role').value = state.profile.role; openModal('profile-modal'); setTimeout(() => $(focusId).focus(), 150); };
+        $('profile-btn').onclick = () => openProfile('pf-name');
+        $('role-btn').onclick = () => openProfile('pf-role');
         $('profile-form').onsubmit = e => {
             e.preventDefault();
             if (!$('pf-name').value.trim()) { $('pf-name').focus(); return; }

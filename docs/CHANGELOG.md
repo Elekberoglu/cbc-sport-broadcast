@@ -1,5 +1,18 @@
 # Dəyişikliklər
 
+## 1.6.1 — 31.10.2026
+- Qrafik təsdiqlənəndən sonra pəncərə avtomatik bağlanır; nəticə (versiya, çəkiliş sayı, dəyişikliklər) qısa bildirişlə göstərilir. Xəta və ya ad tapılmadıqda pəncərə açıq qalır.
+
+## 1.6.0 — 31.10.2026
+- İlk giriş ekranı yalnız **Soyad Ad** soruşur.
+- Vəzifəyə toxunanda profil pəncərəsi vəzifə sahəsi aktiv halda açılır; vəzifə əl ilə yazılır, hazır seçim siyahısı yoxdur.
+- "Yüklə" və "Əllə əlavə et" iki böyük kartla əvəzləndi: **Qrafik yüklə** (Excel faylından avtomatik) və **Qrafik yarat** (məlumatları özün daxil et).
+- iPhone üçün veb-tətbiq GitHub Pages-də (`static.yml`): https://elekberoglu.github.io/cbc-sport-broadcast/www/
+
+## 1.5.2 — 31.10.2026
+- **iPhone üçün veb-tətbiq:** GitHub Pages ilə yerləşdirmə (`.github/workflows/pages.yml`). Safari → Paylaş → "Ana ekrana əlavə et".
+- iPhone ana ekranı üçün 180×180 ikon; veb rejimində bildirişlər service worker vasitəsilə göstərilir (iOS 16.4+), bildirişə toxunanda tətbiq açılır.
+
 ## 1.5.1 — 31.10.2026
 - "Hesablama ayarları" paneli çıxarıldı; iş saatı sabit qaydalarla hesablanır (Futbol/Basketbol/Voleybol/Digər 2 saat, Futzal/Həndbol 1.5 saat, norma 36 saat). Əvvəl dəyişdirilmiş dəyərlər sıfırlanır.
 - Tətbiq ikonasında "CBC" yazısının altına "SPORT" əlavə olundu.

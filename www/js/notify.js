@@ -76,13 +76,21 @@
             webTimers = [];
             if (enabled && 'Notification' in g && Notification.permission === 'granted') {
                 items.filter(n => n.at - now < 24 * HOUR).forEach(n => {
-                    webTimers.push(setTimeout(() => {
-                        try { new Notification(n.title, { body: n.body, icon: 'icons/icon-192.png' }); } catch (e) { /* */ }
-                    }, n.at - now));
+                    webTimers.push(setTimeout(() => showWeb(n.title, n.body), n.at - now));
                 });
             }
         }
         return items.length ? items[0].at : null;
+    }
+
+    // iPhone (ana ekrana əlavə edilmiş veb-tətbiq) bildirişi yalnız service worker vasitəsilə göstərir
+    function showWeb(title, body) {
+        const opts = { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' };
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(r => r.showNotification(title, opts)).catch(() => { try { new Notification(title, opts); } catch (e) { /* */ } });
+        } else {
+            try { new Notification(title, opts); } catch (e) { /* */ }
+        }
     }
 
     async function sendTest() {
@@ -90,7 +98,7 @@
         if (LN) {
             await LN.schedule({ notifications: [{ id: 999, title: 'CBC Sport Broadcast', body: 'Bildirişlər işləyir ✅', schedule: { at: new Date(Date.now() + 3000) } }] });
         } else if ('Notification' in g && Notification.permission === 'granted') {
-            new Notification('CBC Sport Broadcast', { body: 'Bildirişlər işləyir ✅', icon: 'icons/icon-192.png' });
+            showWeb('CBC Sport Broadcast', 'Bildirişlər işləyir ✅');
         }
     }
 
