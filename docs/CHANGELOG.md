@@ -1,5 +1,25 @@
 # Dəyişikliklər
 
+## 1.5.0 — 31.10.2026
+- **Həftəlik iş saatı** (Statistika): həftə bazar ertəsindən bazara qədər; həftənin saatları dairəvi göstəricidə normaya nisbətlə (%), "normaya X qalıb" və ya "normadan X artıq" (⚠). Ayın həftələri zolaqlarla, boz xətt — norma; həftəyə toxunanda seçilir. Ay üzrə cəmi saat.
+- **Hesablama:** iş vaxtı = yığışma saatından oyunun sonuna qədər; oyunun sonu = başlama saatı + idman növünün müddəti. Saatı olmayan çəkiliş üçün yalnız oyun müddəti götürülür və "təxmini" (~) işarələnir.
+- **Hesablama ayarları:** idman növlərinin müddəti (standart: Futbol 2, Basketbol 2, Voleybol 2, Futzal 1.5, Həndbol 1.5, Digər 2 saat) və həftəlik norma (standart 36 saat) dəyişdirilə bilər.
+- "Bu ayın çəkilişləri" siyahısında hər çəkilişin iş saatı göstərilir.
+
+## 1.4.0 — 31.10.2026
+- **Statistika:** seçilmiş ay üçün iki dairəvi (donut) qrafik — "Yer" (Bakı daxili / Ezamiyyət) və "Yayım" (Canlı / Videoyazı), faiz və sayla; seqmentə toxunanda mərkəzdə onun dəyəri görünür.
+- **Aylar üzrə çəkilişlər:** son 12 ayın sayları zolaq şəklində; aya toxunanda həmin ayın statistikası açılır. Ay seçimində hər ayın yanında çəkiliş sayı göstərilir.
+- Qrafik rəngləri rəng korluğu və kontrast üzrə yoxlanılıb, işıqlı və qaranlıq rejim üçün ayrıca seçilib.
+- İlk giriş yalnız bir dəfə soruşulur (ad telefonda yadda saxlanılır; "Cədvəli təmizlə" profili silmir).
+
+## 1.3.0 — 31.10.2026
+- **İlk giriş ekranı:** tətbiq ilk dəfə açılanda istifadəçi Soyad Ad (mütləq, ən azı iki söz) və Vəzifə daxil edir. Standart ad yoxdur; qrafik yüklənəndə yalnız həmin ada uyğun çəkilişlər göstərilir.
+- **Ad tapılmasa:** qrafik idxal olunmur, əvəzində qrafikdəki əməkdaşların siyahısı çıxır — istifadəçi özünü seçir, təsdiqdən sonra öz çəkilişləri yüklənir.
+- **Matç öncəsi/sonrası:** hər kartda göstərilir; qrafikdə yoxdursa "yoxdur" yazılır.
+- **Yükləmə tarixçəsi:** vəzifənin altındakı "Qrafik vN · tarixçə" pəncərəsində hər yükləməni silmək olar (Bəli/Xeyr təsdiqi); silinən versiyanın çəkilişləri də cədvəldən çıxır.
+- **Cədvəli təmizlə:** Ağıllı Xatırlatmanın altında; "Həftəlik cədvəli silmək istədiyinizə əminsiniz?" — Bəli bütün çəkilişləri və tarixçəni silir, Xeyr heç nəyi dəyişmir.
+- **Başlıq:** profil şəkli ad-soyad və vəzifə ilə eyni səviyyədədir.
+
 ## 1.2.0 — 31.10.2026
 
 ### Real qrafik formatı

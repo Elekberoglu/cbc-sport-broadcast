@@ -15,14 +15,15 @@
 
     function defaultState() {
         return {
-            profile: { name: 'Hüseynov Tamerlan', role: 'Rejissor', avatar: null },
+            profile: { name: '', role: '', avatar: null },
             shoots: [],
             people: {},
             archive: [],
             history: [],
             meta: { version: 0, uploadedAt: null, fileName: null, image: null },
             notify: { enabled: false },
-            theme: 'system'
+            theme: 'system',
+            work: { norm: 36, durations: { Futbol: 2, Basketbol: 2, Voleybol: 2, Futzal: 1.5, 'Həndbol': 1.5, 'Digər': 2 } }
         };
     }
     function load() {
@@ -37,6 +38,8 @@
             s.shoots = []; s.people = {}; s.meta = defaultState().meta;
         }
         s.history = s.history || [];
+        s.work = Object.assign(defaultState().work, s.work || {});
+        s.work.durations = Object.assign(defaultState().work.durations, (s.work && s.work.durations) || {});
         return s;
     }
     function save() {
@@ -58,9 +61,15 @@
     }
     function openModal(id) { const m = $(id); m.classList.remove('hidden'); m.classList.add('flex'); }
     function closeModal(id) { const m = $(id); m.classList.add('hidden'); m.classList.remove('flex'); }
-    function confirmBox(text) {
+    function confirmBox(text, o) {
+        o = o || {};
         return new Promise(res => {
             $('confirm-text').textContent = text;
+            $('confirm-title').textContent = o.title || '';
+            $('confirm-title').classList.toggle('hidden', !o.title);
+            $('confirm-icon').className = 'fa-solid ' + (o.icon || 'fa-trash-can');
+            $('confirm-yes').textContent = o.yes || 'Sil';
+            $('confirm-no').textContent = o.no || 'Ləğv et';
             openModal('confirm-modal');
             const done = v => { closeModal('confirm-modal'); $('confirm-yes').onclick = $('confirm-no').onclick = null; res(v); };
             $('confirm-yes').onclick = () => done(true);
@@ -87,11 +96,12 @@
     // ---------- Profil ----------
     function renderProfile() {
         $('profile-name').textContent = state.profile.name || 'Adınızı daxil edin';
+        $('clear-all').classList.toggle('hidden', !state.shoots.length);
         fitName();
         $('profile-role').textContent = state.profile.role || 'Vəzifə';
         const av = $('avatar-container');
         if (state.profile.avatar) av.innerHTML = '<img src="' + state.profile.avatar + '" alt="" class="w-full h-full object-cover">';
-        else av.textContent = C.initials(state.profile.name);
+        else av.textContent = state.profile.name ? C.initials(state.profile.name) : '?';
         const vl = $('version-label');
         vl.classList.toggle('hidden', !state.meta.version);
         vl.innerHTML = state.meta.version ? '<i class="fa-solid fa-code-branch mr-1"></i>Qrafik v' + state.meta.version + ' · tarixçə' : '';
@@ -165,7 +175,8 @@
             '</div>' +
             (item.venue ? '<p class="text-[11px] text-gray-500 -mt-1 mb-1"><i class="fa-solid fa-location-dot mr-1 text-gray-400"></i>' + C.esc(item.venue) + '</p>' : '') +
             (item.sts ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-truck mr-1 text-gray-400"></i>STS: <span class="font-semibold text-gray-700">' + C.esc(item.sts) + '</span></p>' : '') +
-            (item.flash ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-bolt mr-1 text-amber-500"></i>Matçönü + flaş: <span class="font-semibold text-gray-700">' + C.esc(item.flash) + '</span></p>' : '') +
+            '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-bolt mr-1 ' + (item.flash ? 'text-amber-500' : 'text-gray-300') + '"></i>Matç öncəsi/sonrası: ' +
+                (item.flash ? '<span class="font-semibold text-gray-700">' + C.esc(item.flash) + '</span>' : '<span class="text-gray-400">yoxdur</span>') + '</p>' +
             '<div class="weather text-xs text-sky-700 bg-sky-50 px-2.5 py-2 rounded-xl my-2 border border-sky-100 font-medium" data-wx="' + item.id + '">' + weatherHTML(item) + '</div>' +
             '<div class="grid grid-cols-2 gap-3 mt-3 pt-2 border-t border-gray-100">' +
                 '<div class="bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 text-center">' +
@@ -305,27 +316,185 @@
             seen.add(k); return true;
         });
     }
+    // Rənglər yoxlanılıb (rəng korluğu ayrılması + kontrast), işıqlı və qaranlıq rejim üçün ayrıca
+    const CHART = {
+        light: { baku: '#2563eb', trip: '#059669', live: '#dc2626', rec: '#7c3aed', empty: '#e5e7eb', gap: '#f9fafb', bar: '#2563eb', warn: '#d97706' },
+        dark: { baku: '#3b82f6', trip: '#059669', live: '#ef4444', rec: '#8b5cf6', empty: '#374151', gap: '#111827', bar: '#3b82f6', warn: '#d97706' }
+    };
+    function palette() { return document.documentElement.classList.contains('dark') ? CHART.dark : CHART.light; }
+
+    function monthCounts() {
+        const m = {};
+        allMine().forEach(s => { const k = C.monthKey(s.date); if (k) m[k] = (m[k] || 0) + 1; });
+        m[C.monthKey(C.todayISO())] = m[C.monthKey(C.todayISO())] || 0;
+        return m;
+    }
     function fillMonths() {
         const sel = $('stats-month');
-        const months = new Set(allMine().map(s => C.monthKey(s.date)));
-        months.add(C.monthKey(C.todayISO()));
-        const keys = Array.from(months).filter(Boolean).sort().reverse();
-        const cur = sel.value || C.monthKey(C.todayISO());
-        sel.innerHTML = keys.map(k => '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + C.monthLabel(k) + '</option>').join('');
+        const counts = monthCounts();
+        const keys = Object.keys(counts).sort().reverse();
+        const cur = sel.value && counts[sel.value] != null ? sel.value : C.monthKey(C.todayISO());
+        sel.innerHTML = keys.map(k => '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + C.monthLabel(k) + ' (' + counts[k] + ')</option>').join('');
     }
+
+    /** Dairəvi (donut) qrafik: seqmentlər arasında 2px boşluq, mərkəzdə cəm; seqmentə toxunanda mərkəzdə onun dəyəri */
+    function donut(el, parts, centerLabel) {
+        const pal = palette();
+        const total = parts.reduce((a, p) => a + p.value, 0);
+        const R = 44, SW = 16, CIRC = 2 * Math.PI * R, GAP = parts.filter(p => p.value).length > 1 ? 2 : 0;
+        let off = 0, segs = '';
+        if (!total) segs = '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + pal.empty + '" stroke-width="' + SW + '"/>';
+        parts.forEach((p, i) => {
+            if (!p.value) return;
+            const len = p.value / total * CIRC;
+            segs += '<circle class="donut-seg" data-i="' + i + '" cx="60" cy="60" r="' + R + '" fill="none" stroke="' + p.color + '" stroke-width="' + SW + '"' +
+                ' stroke-dasharray="' + Math.max(0, len - GAP) + ' ' + (CIRC - Math.max(0, len - GAP)) + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 60 60)" tabindex="0">' +
+                '<title>' + C.esc(p.label) + ': ' + p.value + ' (' + Math.round(p.value / total * 100) + '%)</title></circle>';
+            off += len;
+        });
+        el.innerHTML = '<svg viewBox="0 0 120 120" class="w-full max-w-[132px] mx-auto block" role="img" aria-label="' + C.esc(parts.map(p => p.label + ' ' + p.value).join(', ')) + '">' + segs +
+            '<text x="60" y="58" text-anchor="middle" class="donut-num">' + total + '</text>' +
+            '<text x="60" y="74" text-anchor="middle" class="donut-lbl">' + C.esc(centerLabel) + '</text></svg>';
+        const num = el.querySelector('.donut-num'), lbl = el.querySelector('.donut-lbl');
+        const reset = () => { num.textContent = total; lbl.textContent = centerLabel; el.querySelectorAll('.donut-seg').forEach(s => s.classList.remove('dim')); };
+        el.querySelectorAll('.donut-seg').forEach(seg => {
+            const p = parts[+seg.dataset.i];
+            const show = () => {
+                num.textContent = p.value; lbl.textContent = p.label;
+                el.querySelectorAll('.donut-seg').forEach(s => s.classList.toggle('dim', s !== seg));
+            };
+            seg.addEventListener('pointerenter', show);
+            seg.addEventListener('focus', show);
+            seg.addEventListener('click', e => { e.stopPropagation(); show(); });
+            seg.addEventListener('pointerleave', reset);
+            seg.addEventListener('blur', reset);
+        });
+    }
+    function legend(el, parts) {
+        const total = parts.reduce((a, p) => a + p.value, 0);
+        el.innerHTML = parts.map(p =>
+            '<div class="flex items-center gap-1.5 text-[11px]"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:' + p.color + '"></span>' +
+            '<span class="text-gray-600 truncate">' + C.esc(p.label) + '</span>' +
+            '<span class="ml-auto font-bold text-gray-900 tabular-nums">' + p.value + '</span>' +
+            '<span class="text-gray-400 tabular-nums w-8 text-right">' + (total ? Math.round(p.value / total * 100) : 0) + '%</span></div>').join('');
+    }
+    function monthBars() {
+        const counts = monthCounts(), sel = $('stats-month').value, pal = palette();
+        const keys = Object.keys(counts).sort().reverse().slice(0, 12);
+        const max = Math.max(1, ...keys.map(k => counts[k]));
+        $('month-bars').innerHTML = keys.map(k => {
+            const on = k === sel;
+            return '<button data-month="' + k + '" class="w-full flex items-center gap-2 text-left rounded-lg px-1.5 py-1 ' + (on ? 'bg-blue-50' : '') + '" aria-pressed="' + on + '" title="' + C.monthLabel(k) + ': ' + counts[k] + ' çəkiliş">' +
+                '<span class="w-24 shrink-0 text-[11px] ' + (on ? 'font-bold text-gray-900' : 'text-gray-600') + '">' + C.monthLabel(k) + '</span>' +
+                '<span class="flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden"><span class="block h-full rounded-full" style="width:' + (counts[k] / max * 100) + '%;background:' + pal.bar + ';opacity:' + (on ? 1 : .45) + '"></span></span>' +
+                '<span class="w-6 text-right text-[11px] font-bold text-gray-900 tabular-nums">' + counts[k] + '</span></button>';
+        }).join('');
+    }
+    // ---------- İş saatı ----------
+    function mins(hhmm) { const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || ''); return m ? +m[1] * 60 + +m[2] : null; }
+    /** Bir çəkilişin iş vaxtı (dəqiqə): yığışmadan oyunun sonuna (başlama + idman müddəti) */
+    function shootMinutes(s) {
+        const dur = Math.round((state.work.durations[s.sport] != null ? state.work.durations[s.sport] : state.work.durations['Digər']) * 60);
+        const g = mins(s.gather), st = mins(s.start);
+        if (g != null && st != null) {
+            const start = st < g ? st + 1440 : st; // gecəyarısını keçirsə
+            return { m: start + dur - g, est: false };
+        }
+        return { m: dur, est: true }; // saatlar yoxdursa — yalnız oyun müddəti (təxmini)
+    }
+    function fmtH(m) { const h = Math.floor(m / 60), r = Math.round(m % 60); return h + ' saat' + (r ? ' ' + r + ' dəq' : ''); }
+    function fmtHs(m) { const h = Math.floor(m / 60), r = Math.round(m % 60); return h + 's' + (r ? ' ' + C.pad(r) + 'd' : ''); }
+    function weekStart(iso) { const d = C.parseISO(iso); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return C.isoDate(d); }
+    function weekLabel(ws) {
+        const a = C.parseISO(ws), b = new Date(a); b.setDate(b.getDate() + 6);
+        return C.pad(a.getDate()) + ' ' + C.MONTHS[a.getMonth()].slice(0, 3) + ' – ' + C.pad(b.getDate()) + ' ' + C.MONTHS[b.getMonth()].slice(0, 3);
+    }
+    let selectedWeek = null;
+    function weeksFor(monthKey) {
+        const w = {};
+        allMine().forEach(s => {
+            const ws = weekStart(s.date);
+            const we = new Date(C.parseISO(ws)); we.setDate(we.getDate() + 6);
+            if (C.monthKey(ws) !== monthKey && C.monthKey(C.isoDate(we)) !== monthKey) return;
+            const r = shootMinutes(s);
+            const o = w[ws] = w[ws] || { m: 0, n: 0, est: 0 };
+            o.m += r.m; o.n++; if (r.est) o.est++;
+        });
+        const tw = weekStart(C.todayISO());
+        if (C.monthKey(tw) === monthKey && !w[tw]) w[tw] = { m: 0, n: 0, est: 0 };
+        return w;
+    }
+    function ring(el, value, max, over) {
+        const pal = palette();
+        const R = 44, SW = 12, CIRC = 2 * Math.PI * R, frac = Math.min(1, value / max);
+        el.innerHTML = '<svg viewBox="0 0 120 120" class="w-full block" role="img" aria-label="' + Math.round(value / max * 100) + '% norma">' +
+            '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + pal.empty + '" stroke-width="' + SW + '"/>' +
+            (frac > 0 ? '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + (over ? pal.warn : pal.bar) + '" stroke-width="' + SW + '" stroke-linecap="round" stroke-dasharray="' + (frac * CIRC) + ' ' + CIRC + '" transform="rotate(-90 60 60)"/>' : '') +
+            '<text x="60" y="60" text-anchor="middle" class="donut-num" style="font-size:22px">' + Math.round(value / max * 100) + '%</text>' +
+            '<text x="60" y="76" text-anchor="middle" class="donut-lbl">normadan</text></svg>';
+    }
+    function renderWeeks(monthKey) {
+        const norm = state.work.norm * 60;
+        const weeks = weeksFor(monthKey);
+        const keys = Object.keys(weeks).sort();
+        if (!keys.length) {
+            $('hours-ring').innerHTML = ''; ring($('hours-ring'), 0, norm, false);
+            $('week-label').textContent = 'Bu ayda çəkiliş yoxdur';
+            $('week-hours').textContent = '0 saat'; $('week-status').textContent = ''; $('week-count').textContent = '';
+            $('week-rows').innerHTML = ''; $('month-hours').textContent = '';
+            return;
+        }
+        if (!selectedWeek || !weeks[selectedWeek]) {
+            const tw = weekStart(C.todayISO());
+            selectedWeek = weeks[tw] ? tw : keys[keys.length - 1];
+        }
+        const w = weeks[selectedWeek], over = w.m > norm;
+        ring($('hours-ring'), w.m, norm, over);
+        $('week-label').textContent = weekLabel(selectedWeek) + (selectedWeek === weekStart(C.todayISO()) ? ' · bu həftə' : '');
+        $('week-hours').textContent = fmtH(w.m) + ' / ' + state.work.norm + ' saat';
+        const st = $('week-status');
+        if (over) { st.className = 'text-[11px] font-semibold mt-1 text-amber-700'; st.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i>Normadan ' + fmtH(w.m - norm) + ' artıq'; }
+        else if (w.m === norm) { st.className = 'text-[11px] font-semibold mt-1 text-emerald-700'; st.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>Norma tam doldu'; }
+        else { st.className = 'text-[11px] font-semibold mt-1 text-gray-600'; st.innerHTML = '<i class="fa-regular fa-clock mr-1"></i>Normaya ' + fmtH(norm - w.m) + ' qalıb'; }
+        $('week-count').textContent = w.n + ' çəkiliş' + (w.est ? ' · ' + w.est + ' çəkilişin saatı yoxdur (təxmini)' : '');
+        const pal = palette(), max = Math.max(norm, ...keys.map(k => weeks[k].m));
+        $('week-rows').innerHTML = keys.map(k => {
+            const o = weeks[k], on = k === selectedWeek, ov = o.m > norm;
+            return '<button data-week="' + k + '" class="w-full flex items-center gap-2 text-left rounded-lg px-1.5 py-1 ' + (on ? 'bg-blue-50' : '') + '" aria-pressed="' + on + '">' +
+                '<span class="w-[5.5rem] shrink-0 whitespace-nowrap text-[11px] ' + (on ? 'font-bold text-gray-900' : 'text-gray-600') + '">' + weekLabel(k) + '</span>' +
+                '<span class="relative flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">' +
+                    '<span class="block h-full rounded-full" style="width:' + (o.m / max * 100) + '%;background:' + (ov ? pal.warn : pal.bar) + ';opacity:' + (on ? 1 : .45) + '"></span>' +
+                    '<span class="absolute top-0 bottom-0 w-0.5 bg-gray-500" style="left:' + (norm / max * 100) + '%" title="Norma"></span></span>' +
+                '<span class="w-[4.75rem] shrink-0 whitespace-nowrap text-right text-[11px] font-bold tabular-nums ' + (ov ? 'text-amber-700' : 'text-gray-900') + '">' + (ov ? '⚠ ' : '') + fmtHs(o.m) + '</span></button>';
+        }).join('');
+        const monthM = allMine().filter(s => C.monthKey(s.date) === monthKey).reduce((a, s) => a + shootMinutes(s).m, 0);
+        $('month-hours').innerHTML = 'Ay üzrə cəmi: <strong class="text-gray-900">' + fmtH(monthM) + '</strong> · boz xətt — həftəlik norma';
+    }
+    function renderWorkSettings() {
+        const labels = ['Futbol', 'Basketbol', 'Voleybol', 'Futzal', 'Həndbol', 'Digər'];
+        $('dur-inputs').innerHTML = labels.map(k =>
+            '<label class="flex items-center justify-between gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1"><span class="text-gray-700">' + k + '</span>' +
+            '<span class="flex items-center gap-1"><input data-dur="' + k + '" type="number" min="0.5" max="12" step="0.25" inputmode="decimal" value="' + state.work.durations[k] + '" class="w-12 text-right text-sm bg-transparent"><span class="text-gray-400">s</span></span></label>').join('');
+        $('norm-input').value = state.work.norm;
+    }
+
     function updateStats() {
         const key = $('stats-month').value;
+        const pal = palette();
         const items = allMine().filter(s => C.monthKey(s.date) === key);
         const trips = items.filter(s => C.isTrip(s.venue));
-        const tripDays = new Set(trips.map(s => s.date)).size;
+        const rec = items.filter(s => s.type === 'yazı').length;
         $('stat-total').textContent = items.length;
-        $('stat-ezam').textContent = tripDays + ' gün';
-        $('stat-baku').textContent = items.length - trips.length;
-        $('stat-live').textContent = items.filter(s => s.type !== 'yazı').length;
-        $('stat-rec').textContent = items.filter(s => s.type === 'yazı').length;
-        $('stat-list').innerHTML = items.sort((a, b) => sortKey(a) - sortKey(b)).map(s =>
-            '<div class="flex justify-between text-[11px] text-gray-600 px-1"><span class="truncate">' + C.esc(C.fmtDate(s.date)) + ' — ' + C.esc(s.match) + '</span><span class="shrink-0 ml-2 ' + (C.isTrip(s.venue) ? 'text-emerald-700' : 'text-gray-400') + '">' + C.esc(C.detectCity(s.venue).name) + '</span></div>'
-        ).join('');
+        $('stat-ezam').textContent = new Set(trips.map(s => s.date)).size + ' gün';
+        const place = [{ label: 'Bakı daxili', value: items.length - trips.length, color: pal.baku }, { label: 'Ezamiyyət', value: trips.length, color: pal.trip }];
+        const type = [{ label: 'Canlı', value: items.length - rec, color: pal.live }, { label: 'Videoyazı', value: rec, color: pal.rec }];
+        donut($('donut-place'), place, 'çəkiliş'); legend($('legend-place'), place);
+        donut($('donut-type'), type, 'yayım'); legend($('legend-type'), type);
+        monthBars();
+        renderWeeks(key);
+        $('stat-list').innerHTML = items.length ? items.sort((a, b) => sortKey(a) - sortKey(b)).map(s => { const r = shootMinutes(s); return (
+            '<div class="flex justify-between text-[11px] text-gray-600 px-1 gap-2"><span class="truncate">' + C.esc(C.fmtDate(s.date)) + ' — ' + C.esc(s.match) + '</span><span class="shrink-0 flex gap-2"><span class="tabular-nums text-gray-900 font-semibold">' + (r.est ? '~' : '') + fmtHs(r.m) + '</span><span class="' + (C.isTrip(s.venue) ? 'text-emerald-700' : 'text-gray-400') + '">' + C.esc(C.detectCity(s.venue).name) + '</span></span></div>'); }
+        ).join('') : '<p class="text-[11px] text-gray-400 px-1">Bu ayda çəkiliş yoxdur.</p>';
     }
 
     // ---------- Əllə əlavə / Redaktə ----------
@@ -474,13 +643,75 @@
             const d = h.diff || {};
             const per = h.period ? C.fmtDMY(h.period[0]) + ' – ' + C.fmtDMY(h.period[1]) : '';
             return '<div class="border ' + (i === 0 ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50') + ' rounded-xl p-2.5 text-[11px]">' +
-                '<div class="flex justify-between gap-2"><span class="font-bold text-gray-900">v' + h.version + (i === 0 ? ' · aktiv' : '') + '</span><span class="text-gray-400">' + new Date(h.uploadedAt).toLocaleString('az-AZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</span></div>' +
+                '<div class="flex justify-between items-center gap-2"><span class="font-bold text-gray-900">v' + h.version + (i === 0 ? ' · aktiv' : '') + '</span>' +
+                    '<span class="flex items-center gap-1"><span class="text-gray-400">' + new Date(h.uploadedAt).toLocaleString('az-AZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</span>' +
+                    '<button data-hist-del="' + h.version + '" class="w-7 h-7 -mr-1 rounded-lg text-red-500 active:bg-red-50" aria-label="v' + h.version + ' versiyasını sil"><i class="fa-solid fa-trash-can"></i></button></span></div>' +
                 '<p class="text-gray-600 break-all">' + C.esc(h.fileName) + '</p>' +
                 '<p class="text-gray-500">Dövr: ' + per + ' · sizin üçün ' + h.myCount + ' çəkiliş' +
                 (h.prevVersion ? ' · əvvəlki (v' + h.prevVersion + ') ilə: +' + (d.added || 0) + ' / −' + (d.removed || 0) + ' / ✎' + (d.changed || 0) : '') + '</p>' +
             '</div>';
         }).join('');
     }
+    async function deleteVersion(v) {
+        const h = state.history.find(x => x.version === v);
+        if (!h) return;
+        const n = state.shoots.filter(s => s.version === v).length;
+        const ok = await confirmBox('v' + v + ' (' + h.fileName + ') silinsin?' + (n ? ' Bu yükləmədən gələn ' + n + ' çəkiliş cədvəldən silinəcək.' : ''), { title: 'Yükləməni sil', yes: 'Bəli', no: 'Xeyr' });
+        if (!ok) return;
+        state.shoots = state.shoots.filter(s => s.version !== v);
+        state.history = state.history.filter(x => x.version !== v);
+        const last = state.history[state.history.length - 1];
+        state.meta = Object.assign({}, state.meta, last
+            ? { version: Math.max(...state.history.map(x => x.version)), fileName: last.fileName, uploadedAt: last.uploadedAt }
+            : { version: 0, fileName: null, uploadedAt: null });
+        Object.keys(weatherCache).forEach(k => delete weatherCache[k]);
+        save();
+        $('upload-result').classList.add('hidden');
+        renderHistory();
+        refresh();
+        toast('v' + v + ' silindi');
+        if (!state.history.length) closeModal('upload-modal');
+    }
+
+    async function clearAll() {
+        const ok = await confirmBox('Həftəlik cədvəli silmək istədiyinizə əminsiniz?', { title: 'Cədvəli təmizlə', icon: 'fa-broom', yes: 'Bəli', no: 'Xeyr' });
+        if (!ok) return;
+        state.shoots = [];
+        state.people = {};
+        state.history = [];
+        state.meta = { version: 0, uploadedAt: null, fileName: null, image: null };
+        Object.keys(weatherCache).forEach(k => delete weatherCache[k]);
+        save();
+        refresh();
+        toast('Cədvəl təmizləndi');
+    }
+
+    // ---------- İlk giriş ----------
+    function showOnboarding() {
+        $('ob-name').value = state.profile.name || '';
+        $('ob-role').value = state.profile.role || '';
+        $('onboard').classList.remove('hidden');
+        setTimeout(() => $('ob-name').focus(), 300);
+    }
+    function submitOnboarding(e) {
+        e.preventDefault();
+        const name = $('ob-name').value.trim().replace(/\s+/g, ' ');
+        const err = $('ob-err');
+        if (name.split(' ').filter(w => w.length > 1).length < 2) {
+            err.textContent = 'Soyadınızı və adınızı yazın (məs: Məmmədov İlham).';
+            err.classList.remove('hidden');
+            $('ob-name').classList.add('field-error');
+            return;
+        }
+        err.classList.add('hidden'); $('ob-name').classList.remove('field-error');
+        state.profile.name = name;
+        state.profile.role = $('ob-role').value.trim();
+        save();
+        $('onboard').classList.add('hidden');
+        refresh();
+        toast('Xoş gəldiniz, ' + name.split(' ').slice(-1)[0] + '! İndi qrafiki yükləyin.', 3500);
+    }
+
     function openHistory() {
         $('upload-result').classList.add('hidden');
         renderHistory();
@@ -582,6 +813,21 @@
             if (!res.shoots.length) throw new Error(res.warnings.join(' ') || 'Cədvəldə çəkiliş tapılmadı.');
 
             const matched = res.shoots.filter(s => s.crew.some(n => C.nameMatch(n, state.profile.name)));
+            const names = Object.keys(res.people).sort((a, b) => a.localeCompare(b, 'az'));
+            if (!matched.length && names.length) {
+                showUploadResult('warn', '<i class="fa-solid fa-user-xmark mr-1"></i><strong>"' + C.esc(state.profile.name) + '" adı qrafikdə tapılmadı.</strong> Qrafik hələ idxal edilmədi.<br>Adınız qrafikdə başqa cür yazılıbsa, siyahıdan özünüzü seçin:' +
+                    '<div class="mt-2 max-h-56 overflow-y-auto space-y-1 pr-1">' + names.map(n =>
+                        '<button data-pick-name="' + C.esc(n) + '" class="w-full text-left bg-white border border-amber-200 rounded-lg px-2.5 py-1.5 text-gray-800 active:bg-amber-100"><strong>' + C.esc(n) + '</strong>' + (res.people[n] ? ' <span class="text-gray-500">· ' + C.esc(res.people[n]) + '</span>' : '') + '</button>').join('') + '</div>');
+                $('upload-result').querySelectorAll('[data-pick-name]').forEach(b => b.addEventListener('click', async () => {
+                    const ok = await confirmBox('Profil adınız "' + b.dataset.pickName + '" olaraq dəyişsin və bu ada uyğun qrafik göstərilsin?', { title: 'Bu sizsiniz?', icon: 'fa-user-check', yes: 'Bəli', no: 'Xeyr' });
+                    if (!ok) return;
+                    state.profile.name = b.dataset.pickName;
+                    if (!state.profile.role && res.people[b.dataset.pickName]) state.profile.role = res.people[b.dataset.pickName];
+                    save();
+                    finishImport(res, name);
+                }));
+                return;
+            }
             if (!matched.length) {
                 const crewCount = Object.keys(res.people).length;
                 showUploadResult('warn', '<i class="fa-solid fa-user-xmark mr-1"></i><strong>"' + C.esc(state.profile.name) + '" adına çəkiliş tapılmadı.</strong><br>' +
@@ -590,6 +836,15 @@
                 return;
             }
 
+            finishImport(res, name);
+        } catch (err) {
+            console.error(err);
+            showUploadResult('err', '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' + C.esc(err.message || 'Fayl oxunmadı') + '<br>Heç bir dəyişiklik edilmədi.');
+        }
+    }
+
+    function finishImport(res, name) {
+        {
             const r = applyNewSchedule(res, name);
             const d = r.diff;
             showUploadResult('ok',
@@ -600,9 +855,6 @@
                 (res.warnings.length ? '<br><span class="text-amber-700">⚠ ' + C.esc(res.warnings.join(' ')) + '</span>' : ''));
             renderHistory();
             refresh();
-        } catch (err) {
-            console.error(err);
-            showUploadResult('err', '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' + C.esc(err.message || 'Fayl oxunmadı') + '<br>Heç bir dəyişiklik edilmədi.');
         }
     }
 
@@ -699,8 +951,19 @@
             if (del) { deleteShoot(del.dataset.del); }
         });
 
-        $('open-stats').onclick = () => { fillMonths(); updateStats(); openModal('stats-modal'); };
-        $('stats-month').onchange = updateStats;
+        $('open-stats').onclick = () => { selectedWeek = null; fillMonths(); renderWorkSettings(); $('norm-label').textContent = state.work.norm + ' saat'; updateStats(); openModal('stats-modal'); };
+        $('stats-month').onchange = () => { selectedWeek = null; updateStats(); };
+        $('week-rows').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) { selectedWeek = b.dataset.week; renderWeeks($('stats-month').value); } });
+        $('dur-inputs').addEventListener('change', e => {
+            const i = e.target.closest('[data-dur]'); if (!i) return;
+            const v = parseFloat(String(i.value).replace(',', '.'));
+            if (v > 0 && v <= 12) { state.work.durations[i.dataset.dur] = v; save(); updateStats(); } else i.value = state.work.durations[i.dataset.dur];
+        });
+        $('norm-input').addEventListener('change', e => {
+            const v = parseFloat(String(e.target.value).replace(',', '.'));
+            if (v >= 1 && v <= 80) { state.work.norm = v; $('norm-label').textContent = v + ' saat'; save(); updateStats(); } else e.target.value = state.work.norm;
+        });
+        $('month-bars').addEventListener('click', e => { const b = e.target.closest('[data-month]'); if (b) { $('stats-month').value = b.dataset.month; selectedWeek = null; updateStats(); } });
 
         // Yüklə → fayl seçimi → təsdiq pəncərəsi
         $('open-upload').onclick = () => $('schedule-input').click();
@@ -713,6 +976,10 @@
         $('view-image').onclick = () => { $('image-view').src = state.meta.image; openModal('image-modal'); };
 
         $('add-shoot').onclick = () => openEdit(null);
+        $('clear-all').onclick = clearAll;
+        $('onboard-form').onsubmit = submitOnboarding;
+        $('ob-name').addEventListener('input', () => { $('ob-err').classList.add('hidden'); $('ob-name').classList.remove('field-error'); });
+        $('history-list').addEventListener('click', e => { const b = e.target.closest('[data-hist-del]'); if (b) deleteVersion(+b.dataset.histDel); });
         $('edit-form').onsubmit = saveEdit;
         bindDateField();
         bindTimeFields();
@@ -730,7 +997,8 @@
         $('profile-btn').onclick = () => { $('pf-name').value = state.profile.name; $('pf-role').value = state.profile.role; openModal('profile-modal'); };
         $('profile-form').onsubmit = e => {
             e.preventDefault();
-            state.profile.name = $('pf-name').value.trim();
+            if (!$('pf-name').value.trim()) { $('pf-name').focus(); return; }
+            state.profile.name = $('pf-name').value.trim().replace(/\s+/g, ' ');
             state.profile.role = $('pf-role').value.trim();
             save(); closeModal('profile-modal'); refresh();
             toast('Profil yeniləndi');
@@ -768,6 +1036,7 @@
         bind();
         applyTheme();
         refresh();
+        if (!state.profile.name) showOnboarding();
         const SS = g.Capacitor && g.Capacitor.Plugins && g.Capacitor.Plugins.SplashScreen;
         if (SS) setTimeout(() => SS.hide(), 300);
         if ('serviceWorker' in navigator && !(g.Capacitor && g.Capacitor.isNativePlatform && g.Capacitor.isNativePlatform()) && location.protocol === 'https:') {

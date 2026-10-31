@@ -91,3 +91,15 @@ html, body, .bg-white, .bg-gray-50, .bg-gray-100 { transition: background-color 
 .dp-day:active { transform: scale(.94); }
 .dark .dp-day.text-gray-800 { color: #e5e7eb; }
 .dark .ring-blue-300 { --tw-ring-color: rgba(96, 165, 250, .6); }
+
+/* ===== Dairəvi qrafik ===== */
+.donut-num { font-size: 24px; font-weight: 900; fill: #111827; pointer-events: none; }
+.donut-lbl { font-size: 10px; font-weight: 600; fill: #6b7280; pointer-events: none; }
+.dark .donut-num { fill: #f9fafb; }
+.dark .donut-lbl { fill: #9ca3af; }
+.donut-seg { cursor: pointer; transition: opacity .15s; outline: none; }
+.donut-seg.dim { opacity: .3; }
+.dark .text-amber-700 { color: #fbbf24; }
+.dark .bg-gray-500 { background-color: #9ca3af; }
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
