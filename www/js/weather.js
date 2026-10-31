@@ -2,7 +2,7 @@
 (function (g) {
     'use strict';
     const C = g.CBC;
-    const CACHE_KEY = 'cbc_weather_cache_v1';
+    const CACHE_KEY = 'cbc_weather_cache_v2';
     const TTL = 3 * 3600 * 1000;
     let cache = {};
     try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch (e) { cache = {}; }
@@ -29,7 +29,7 @@
         if (c && Date.now() - c.ts < TTL) return Promise.resolve(c.data);
         if (inflight[key]) return inflight[key];
         const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + city.lat + '&longitude=' + city.lon +
-            '&hourly=temperature_2m,weather_code,wind_speed_10m,precipitation_probability&timezone=Asia%2FBaku&forecast_days=16&past_days=2';
+            '&hourly=temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation,rain,snowfall&timezone=Asia%2FBaku&forecast_days=16&past_days=2';
         inflight[key] = fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(j => {
             const data = j.hourly;
             cache[key] = { ts: Date.now(), data };
@@ -44,19 +44,37 @@
         return inflight[key];
     }
 
-    /** Çəkiliş üçün hava: {temp, wind, rain, txt, icon, emoji} və ya null */
+    function atHour(data, date, hhmm, city) {
+        if (!hhmm) return null;
+        const target = date + 'T' + hhmm.slice(0, 2) + ':00';
+        const i = data.time.indexOf(target);
+        if (i < 0) return null;
+        const pick = k => (data[k] && data[k][i] != null ? data[k][i] : null);
+        const wind = Math.round(pick('wind_speed_10m') || 0);
+        const rain = pick('rain'), snow = pick('snowfall');
+        const out = Object.assign({
+            time: hhmm,
+            temp: Math.round(pick('temperature_2m')),
+            wind,
+            gust: pick('wind_gusts_10m') != null ? Math.round(pick('wind_gusts_10m')) : null,
+            prob: pick('precipitation_probability'),
+            precip: pick('precipitation'),
+            rain, snow, city
+        }, describe(pick('weather_code'), wind));
+        // Faktiki yağıntı miqdarına görə dəqiqləşdir
+        if (snow > 0) { out.txt = 'Qarlı'; out.icon = 'fa-snowflake text-sky-400'; out.emoji = '❄️'; }
+        return out;
+    }
+
+    /** Çəkiliş üçün hava: {city, gather, start} — hər biri saatlıq proqnoz və ya null. Proqnoz yoxdursa null. */
     async function forShoot(shoot) {
         const city = C.detectCity(shoot.venue);
         const data = await fetchCity(city);
         if (!data || !data.time) return null;
-        const hour = (shoot.start || '15:00').slice(0, 2);
-        const target = shoot.date + 'T' + hour + ':00';
-        const i = data.time.indexOf(target);
-        if (i < 0) return null;
-        const temp = Math.round(data.temperature_2m[i]);
-        const wind = Math.round(data.wind_speed_10m[i]);
-        const rain = data.precipitation_probability ? data.precipitation_probability[i] : null;
-        return Object.assign({ temp, wind, rain, city: city.name }, describe(data.weather_code[i], wind));
+        const gather = atHour(data, shoot.date, shoot.gather, city.name);
+        const start = atHour(data, shoot.date, shoot.start, city.name);
+        if (!gather && !start) return null;
+        return { city: city.name, gather, start };
     }
 
     g.CBC = Object.assign(g.CBC || {}, { weatherForShoot: forShoot });

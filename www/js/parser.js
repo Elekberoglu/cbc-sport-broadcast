@@ -80,7 +80,9 @@
     }
 
     function classifyHeader(cell) {
-        const s = C.norm(cellText(cell));
+        const raw = cellText(cell).trim();
+        if (/^(№|#|n°|no\.?)$/i.test(raw)) return 'num';
+        const s = C.norm(raw);
         if (!s) return null;
         // Sıra vacibdir: "Yığışma saatı" həm də "saat" sözünü daşıyır
         for (const k of ['num', 'gather', 'crew', 'type', 'sport', 'date', 'day', 'start', 'match', 'venue']) {
@@ -102,6 +104,11 @@
         return null;
     }
 
+    /** Heyət cədvəlinin başlığıdır? (oyunlar cədvəlini burada dayandırmaq üçün) */
+    function isStrongMatrixHeader(row) {
+        const t = (row || []).map(c => C.norm(cellText(c)));
+        return t.some(s => /soyad|emekdas|isci|^ad soyad$|^name$/.test(s)) || (t.some(s => NAME_H.test(s)) && t.some(s => ROLE_H.test(s)));
+    }
     function isMatrixHeader(row) {
         const t = (row || []).map(c => C.norm(cellText(c)));
         return t.some(s => NAME_H.test(s)) && (t.some(s => ROLE_H.test(s)) || t.filter(Boolean).length >= 3);
@@ -126,7 +133,7 @@
             let lastDate = null, blank = 0;
             for (let r = hdr.row + 1; r < rows.length; r++) {
                 const row = rows[r] || [];
-                if (isMatrixHeader(row) && c.match != null && !cellText(row[c.match])) break;
+                if (isStrongMatrixHeader(row)) break;
                 if (findMatchHeader([row])) break;
                 const match = cellText(row[c.match]);
                 if (!row.some(v => cellText(v))) { if (++blank >= 2 && shoots.length) break; continue; }

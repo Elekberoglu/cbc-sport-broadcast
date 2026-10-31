@@ -67,3 +67,22 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 .dark ::placeholder { color: #6b7280; }
 html, body, .bg-white, .bg-gray-50, .bg-gray-100 { transition: background-color .2s ease; }
 .dark .text-amber-700\/70 { color: rgba(251, 191, 36, .7); }
+
+/* ===== Təkər tipli saat seçici ===== */
+.tp-sheet { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+.tp-wrap { position: relative; display: grid; grid-template-columns: 1fr 14px 1fr 1fr; align-items: center; height: 200px; user-select: none; -webkit-user-select: none; }
+.tp-band { position: absolute; left: 0; right: 0; top: 80px; height: 40px; border-radius: 12px; background: #eff6ff; border: 1px solid #dbeafe; pointer-events: none; }
+.tp-sep { position: relative; text-align: center; font-weight: 800; font-size: 20px; color: #1e3a8a; }
+.tp-col { position: relative; height: 200px; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; cursor: grab; outline: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent); touch-action: pan-y; }
+.tp-col::-webkit-scrollbar { display: none; }
+.tp-col.dragging { scroll-snap-type: none; cursor: grabbing; }
+.tp-col:focus-visible { box-shadow: inset 0 0 0 2px #93c5fd; border-radius: 12px; }
+.tp-spacer { height: 80px; }
+.tp-item { height: 40px; line-height: 40px; text-align: center; font-size: 20px; color: #9ca3af; scroll-snap-align: center; font-variant-numeric: tabular-nums; transition: color .15s, font-size .15s; }
+.tp-item.on { color: #1e3a8a; font-weight: 800; font-size: 22px; }
+.dark .tp-band { background: rgba(37, 99, 235, .18); border-color: rgba(59, 130, 246, .35); }
+.dark .tp-item.on, .dark .tp-sep { color: #dbeafe; }
+.dark .tp-item { color: #6b7280; }
+.field-error { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, .15); }
+.dark .text-red-600 { color: #f87171; }

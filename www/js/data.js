@@ -136,30 +136,26 @@
         }
     }
 
-    // Dizayndakı nümunə məlumat (ilk açılışda göstərilir)
-    function sampleData() {
-        const crewA = ['Hüseynov Tamerlan', 'Qasımov Fuad', 'Əliyev Rizvan'];
-        return {
-            shoots: [
-                { id: 's1', date: '2026-10-27', gather: '13:00', gatherNote: '', start: '18:00', match: 'Səbail - Zirə', venue: 'B.R. Arena', sport: 'Futbol', type: 'canlı', crew: ['Hüseynov Tamerlan', 'Məmmədov İlhəm', 'Məmmədov Teyyub'] },
-                { id: 's6', date: '2026-10-27', gather: '14:00', gatherNote: '', start: '19:00', match: 'Sabah BK - Nanterre 92', venue: 'Milli Gimnastika Arenası', sport: 'Basketbol', type: 'canlı', crew: ['Əjdərov Vahid'] },
-                { id: 's2', date: '2026-10-28', gather: '07:00', gatherNote: 'BOS', start: '14:00', match: 'A/K İmişli - Qaradağ L', venue: 'Yevlax ş. stadionu', sport: 'Futbol', type: 'canlı', crew: crewA },
-                { id: 's7', date: '2026-10-28', gather: '10:00', gatherNote: 'BOS', start: '16:00', match: 'Kəpəz - Baku S', venue: 'Gəncə ş. stadionu', sport: 'Futbol', type: 'canlı', crew: ['Mehdiyev Elçin'] },
-                { id: 's3', date: '2026-10-30', gather: '13:30', gatherNote: '', start: '18:30', match: 'T.Tovuz - Sabah', venue: 'Tovuz ş. stadionu', sport: 'Futbol', type: 'canlı', crew: ['Hüseynov Tamerlan'] },
-                { id: 's4', date: '2026-10-31', gather: '09:00', gatherNote: 'BOS', start: '15:00', match: 'Araz N - Zirə', venue: 'Şamaxı ş. stadionu', sport: 'Futbol', type: 'canlı', crew: crewA },
-                { id: 's5', date: '2026-11-01', gather: '13:00', gatherNote: '', start: '17:30', match: 'Kəpəz - İmişli', venue: 'Gəncə ş. stadionu', sport: 'Futbol', type: 'yazı', crew: ['Hüseynov Tamerlan', 'Mehdiyev Elçin'] }
-            ],
-            people: {
-                'Hüseynov Tamerlan': 'Rejissor', 'Məmmədov İlhəm': 'STS rəhbəri', 'Əjdərov Vahid': 'Texniki inzibatçı',
-                'Mehdiyev Elçin': 'Rejissor', 'Məmmədov Teyyub': 'Rejissor', 'Əliyev Rizvan': 'Təkrar operator', 'Qasımov Fuad': 'Səs mühəndisi'
-            }
-        };
+    /** ISO → GG/AA/İİİİ */
+    function fmtDMY(iso) {
+        const d = parseISO(iso);
+        return d ? pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() : '';
+    }
+    /** GG/AA/İİİİ → ISO, etibarsızdırsa null */
+    function parseDMY(str) {
+        const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(str || '').trim());
+        if (!m) return null;
+        const d = +m[1], mo = +m[2], y = +m[3];
+        if (y < 2000 || y > 2100 || mo < 1 || mo > 12 || d < 1) return null;
+        const dt = new Date(y, mo - 1, d);
+        if (dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+        return isoDate(dt);
     }
 
     g.CBC = Object.assign(g.CBC || {}, {
         MONTHS, MONTHS_CAP, WEEKDAYS, CITIES, BAKU,
         translit, norm, detectCity, isTrip, nameMatch,
         pad, isoDate, todayISO, parseISO, dateTime, fmtDate, weekday, monthKey, monthLabel,
-        initials, esc, uid, hashInt, guessSport, sportIcon, sampleData
+        initials, esc, uid, hashInt, guessSport, sportIcon, fmtDMY, parseDMY
     });
 })(window);

@@ -26,15 +26,13 @@
     <!-- HEADER -->
     <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 safe-top">
         <div class="max-w-md mx-auto px-4 pt-2 pb-3">
-            <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                    <span class="text-[10px] font-black tracking-[0.2em] text-gray-400 uppercase">CBC Sport Broadcast</span>
-                </div>
-                <span id="version-label" class="text-[10px] text-gray-400 font-medium"></span>
+            <div class="flex items-center justify-center gap-2 mb-3">
+                <img src="icons/icon-192.png" alt="" class="w-5 h-5 rounded-md shrink-0">
+                <span class="text-[11px] font-black tracking-[0.2em] text-gray-500 uppercase leading-none">CBC Sport Broadcast</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0"></span>
             </div>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3 min-w-0">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
                     <div class="relative shrink-0">
                         <div id="avatar-container" class="w-12 h-12 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-lg shadow overflow-hidden">HT</div>
                         <input type="file" id="avatar-input" accept="image/*" class="hidden">
@@ -42,14 +40,17 @@
                             <i class="fa-solid fa-camera"></i>
                         </button>
                     </div>
-                    <button id="profile-btn" class="text-left min-w-0">
-                        <h1 id="profile-name" class="font-bold text-gray-900 leading-tight truncate">—</h1>
-                        <p class="text-xs text-blue-600 font-semibold flex items-center gap-1"><span id="profile-role">—</span><i class="fa-solid fa-pen text-[9px] text-gray-300"></i></p>
-                    </button>
+                    <div class="min-w-0 flex-1">
+                        <button id="profile-btn" class="text-left w-full">
+                            <h1 id="profile-name" class="font-bold text-gray-900 leading-tight break-words">—</h1>
+                            <p class="text-xs text-blue-600 font-semibold flex items-center gap-1"><span id="profile-role">—</span><i class="fa-solid fa-pen text-[9px] text-gray-300"></i></p>
+                        </button>
+                        <button id="version-label" class="hidden text-[10px] text-gray-400 font-medium mt-0.5"></button>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
-                    <button id="theme-btn" class="p-2.5 bg-gray-100 text-gray-600 rounded-xl active:bg-gray-200 transition text-xs w-9 flex items-center justify-center" aria-label="Görünüş rejimi">
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button id="theme-btn" class="p-2 bg-gray-100 text-gray-600 rounded-xl active:bg-gray-200 transition text-xs w-9 h-9 flex items-center justify-center" aria-label="Görünüş rejimi">
                         <i id="theme-icon" class="fa-solid fa-circle-half-stroke text-sm"></i>
                     </button>
                     <button id="open-stats" class="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:bg-blue-100 transition flex items-center gap-1 text-xs font-semibold" aria-label="Statistika">
@@ -80,10 +81,6 @@
 
         <!-- MY SCHEDULE -->
         <section id="section-my" class="space-y-4">
-            <div id="sample-banner" class="hidden bg-indigo-50 border border-indigo-100 text-indigo-800 rounded-2xl p-3 text-xs flex items-center justify-between gap-2">
-                <span><i class="fa-solid fa-circle-info mr-1"></i>Nümunə məlumat göstərilir. Öz qrafikinizi yükləyin.</span>
-                <button id="clear-sample" class="font-bold underline shrink-0">Təmizlə</button>
-            </div>
 
             <div class="flex justify-between items-center px-1">
                 <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Həftəlik Çəkiliş Cədvəli</h2>
@@ -129,7 +126,7 @@
         <!-- FOOTER -->
         <footer class="pt-6 pb-2 text-center border-t border-gray-200">
             <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
-            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.0</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.1</p>
         </footer>
     </main>
 
@@ -165,25 +162,44 @@
         </div>
     </div>
 
-    <!-- UPLOAD MODAL -->
-    <div id="upload-modal" class="modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+    <input type="file" id="schedule-input" accept=".xlsx,.csv,image/*,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="hidden">
+
+    <!-- UPLOAD CONFIRM MODAL -->
+    <div id="confirm-upload-modal" class="modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-xl">
             <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-                <h3 class="font-bold text-lg text-gray-900">Qrafik Yüklə</h3>
-                <button data-close="upload-modal" class="text-gray-400 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="font-bold text-lg text-gray-900">Qrafiki təsdiqləyin</h3>
+                <button id="cu-x" class="text-gray-400 w-8 h-8" aria-label="Bağla"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-gray-500 leading-relaxed">
-                Yeni Excel və ya Şəkil qrafikini yükləyin. Əvvəlki cədvəl avtomatik sıfırlanacaq və sonuncu versiya tətbiq olunacaq.
-            </p>
-            <input type="file" id="schedule-input" accept=".xlsx,.csv,image/*,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="hidden">
-            <button id="pick-file" class="w-full border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center bg-gray-50 transition active:border-blue-500">
-                <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-500 mb-2"></i>
-                <p class="text-xs font-semibold text-gray-700">Faylı seçin</p>
-                <p class="text-[10px] text-gray-400 mt-1">XLSX, CSV, PNG, JPG dəstəklənir</p>
-            </button>
+            <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-2xl p-3">
+                <div id="cu-icon" class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-file-excel"></i></div>
+                <div class="min-w-0">
+                    <p id="cu-name" class="text-sm font-bold text-gray-900 break-all"></p>
+                    <p id="cu-meta" class="text-[11px] text-gray-500"></p>
+                </div>
+            </div>
+            <p id="cu-text" class="text-xs text-gray-600 leading-relaxed"></p>
+            <div class="grid grid-cols-2 gap-2 text-sm font-bold">
+                <button id="cu-cancel" class="py-3 rounded-xl bg-gray-100 text-gray-700">Ləğv et</button>
+                <button id="cu-ok" class="py-3 rounded-xl bg-blue-600 text-white shadow">Təsdiq et</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPLOAD RESULT / HISTORY MODAL -->
+    <div id="upload-modal" class="modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <h3 class="font-bold text-lg text-gray-900">Qrafik</h3>
+                <button data-close="upload-modal" class="text-gray-400 w-8 h-8" aria-label="Bağla"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
             <div id="upload-result" class="hidden text-xs rounded-xl p-3"></div>
-            <div id="current-version" class="text-[11px] text-gray-400 text-center"></div>
+            <div>
+                <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Versiya tarixçəsi</h4>
+                <div id="history-list" class="space-y-1.5"></div>
+            </div>
             <button id="view-image" class="hidden w-full text-xs font-semibold text-blue-600 py-2"><i class="fa-regular fa-image mr-1"></i>Son yüklənən qrafik şəklinə bax</button>
+            <button id="pick-file" class="w-full bg-blue-600 text-white text-sm font-bold py-3 rounded-xl shadow"><i class="fa-solid fa-file-arrow-up mr-1"></i>Yeni qrafik seç</button>
         </div>
     </div>
 
@@ -234,37 +250,51 @@
                 <h3 class="font-bold text-base text-gray-900" id="edit-title">Çəkiliş Redaktəsi</h3>
                 <button data-close="edit-modal" class="text-gray-400 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <form id="edit-form" class="space-y-3 text-xs">
+            <form id="edit-form" class="space-y-3 text-xs" novalidate>
                 <input type="hidden" id="f-id">
                 <div>
-                    <label for="f-date" class="font-medium text-gray-700 block mb-1">Tarix</label>
-                    <input type="date" id="f-date" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                    <label for="f-date" class="font-medium text-gray-700 block mb-1">Tarix <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <input id="f-date" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="GG/AA/İİİİ" class="w-full border border-gray-200 rounded-xl p-2.5 pr-11 bg-gray-50 text-sm">
+                        <button type="button" id="f-date-btn" class="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 text-blue-600" aria-label="Təqvimi aç"><i class="fa-regular fa-calendar"></i></button>
+                        <input type="date" id="f-date-native" tabindex="-1" aria-hidden="true" class="absolute right-0 bottom-0 w-px h-px opacity-0 pointer-events-none">
+                    </div>
+                    <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-date"></p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label for="f-gather" class="font-medium text-gray-700 block mb-1">Yığışma Saatı</label>
-                        <input type="time" id="f-gather" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                        <label for="f-gather" class="font-medium text-gray-700 block mb-1">Yığışma saatı <span class="text-red-500">*</span></label>
+                        <button type="button" id="f-gather" data-time="" data-title="Yığışma saatı" class="time-field w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm text-left flex items-center justify-between">
+                            <span class="tf-val text-gray-400">--:-- --</span><i class="fa-regular fa-clock text-gray-400"></i>
+                        </button>
+                        <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-gather"></p>
                     </div>
                     <div>
-                        <label for="f-start" class="font-medium text-gray-700 block mb-1">Başlama Saatı</label>
-                        <input type="time" id="f-start" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                        <label for="f-start" class="font-medium text-gray-700 block mb-1">Başlama saatı <span class="text-red-500">*</span></label>
+                        <button type="button" id="f-start" data-time="" data-title="Başlama saatı" class="time-field w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm text-left flex items-center justify-between">
+                            <span class="tf-val text-gray-400">--:-- --</span><i class="fa-regular fa-clock text-gray-400"></i>
+                        </button>
+                        <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-start"></p>
                     </div>
                 </div>
                 <div>
-                    <label for="f-gnote" class="font-medium text-gray-700 block mb-1">Yığışma qeydi (məs: BOS)</label>
-                    <input id="f-gnote" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="BOS">
+                    <label for="f-gnote" class="font-medium text-gray-700 block mb-1">Yığışma qeydi <span class="text-red-500">*</span></label>
+                    <input id="f-gnote" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                    <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-gnote"></p>
                 </div>
                 <div>
-                    <label for="f-match" class="font-medium text-gray-700 block mb-1">Çəkiliş / Oyun</label>
-                    <input id="f-match" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Səbail - Zirə">
+                    <label for="f-match" class="font-medium text-gray-700 block mb-1">Çəkiliş (məs: Sabah-Qarabağ) <span class="text-red-500">*</span></label>
+                    <input id="f-match" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                    <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-match"></p>
                 </div>
                 <div>
-                    <label for="f-venue" class="font-medium text-gray-700 block mb-1">Çəkiliş Yeri (boş qalsa Bakı sayılır)</label>
-                    <input id="f-venue" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Məs: Yevlax ş. stadionu">
+                    <label for="f-venue" class="font-medium text-gray-700 block mb-1">Çəkiliş yeri (boş qalsa Bakı sayılır)</label>
+                    <input id="f-venue" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                    <p class="text-[10px] text-gray-400 mt-1"><i class="fa-solid fa-cloud-sun mr-1"></i>Hava proqnozu bu yerə və tarixə görə avtomatik göstəriləcək.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label for="f-sport" class="font-medium text-gray-700 block mb-1">İdman Növü</label>
+                        <label for="f-sport" class="font-medium text-gray-700 block mb-1">İdman növü</label>
                         <select id="f-sport" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
                             <option>Futbol</option><option>Basketbol</option><option>Voleybol</option><option>Futzal</option><option>Həndbol</option><option>Digər</option>
                         </select>
@@ -277,16 +307,28 @@
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label for="f-weather" class="font-medium text-gray-700 block mb-1">Hava (boş qalsa avtomatik proqnoz)</label>
-                    <input id="f-weather" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="18°C, Yağışlı">
-                </div>
-                <div>
-                    <label for="f-crew" class="font-medium text-gray-700 block mb-1">Heyət (vergüllə, istəyə görə)</label>
-                    <textarea id="f-crew" rows="2" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Qasımov Fuad, Əliyev Rizvan"></textarea>
-                </div>
                 <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow active:bg-blue-700 mt-1">Yadda Saxla</button>
             </form>
+        </div>
+    </div>
+
+    <!-- WHEEL TIME PICKER -->
+    <div id="tp-modal" class="modal fixed inset-0 bg-black/50 z-[65] hidden items-end sm:items-center justify-center">
+        <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-4 shadow-xl tp-sheet" role="dialog" aria-labelledby="tp-title">
+            <div class="flex items-center justify-between mb-3">
+                <button type="button" id="tp-close" class="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="Bağla"><i class="fa-solid fa-xmark text-base"></i></button>
+                <h3 id="tp-title" class="font-bold text-sm text-gray-900">Saat</h3>
+                <span class="w-9"></span>
+            </div>
+            <div class="tp-wrap">
+                <div class="tp-band"></div>
+                <div class="tp-col" id="tp-h" tabindex="0" aria-label="Saat"></div>
+                <div class="tp-sep">:</div>
+                <div class="tp-col" id="tp-m" tabindex="0" aria-label="Dəqiqə"></div>
+                <div class="tp-col tp-ap" id="tp-ap" tabindex="0" aria-label="AM/PM"></div>
+            </div>
+            <p id="tp-preview" class="text-center text-[11px] text-gray-500 mt-2"></p>
+            <button type="button" id="tp-ok" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow mt-3">Təsdiq et</button>
         </div>
     </div>
 
@@ -310,6 +352,7 @@
     <script src="js/parser.js"></script>
     <script src="js/weather.js"></script>
     <script src="js/notify.js"></script>
+    <script src="js/timepicker.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

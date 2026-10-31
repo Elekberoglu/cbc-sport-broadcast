@@ -4,38 +4,51 @@
     const C = g.CBC;
     const $ = id => document.getElementById(id);
     const STORE = 'cbc_sport_broadcast_v1';
-    const SHOOT_DURATION_H = 3; // başlamadan sonra neçə saata "Tamamlandı" sayılır
+    const SHOOT_DURATION_H = 3;   // başlamadan sonra neçə saata "Tamamlandı" sayılır
+    const HISTORY_MAX = 20;       // saxlanılan qrafik versiyalarının sayı
 
     // ---------- Vəziyyət ----------
     let state = load();
     let currentTab = 'my';
+    let pendingFile = null;       // təsdiq gözləyən fayl
     const weatherCache = {};
 
     function defaultState() {
-        const s = C.sampleData();
         return {
             profile: { name: 'Hüseynov Tamerlan', role: 'Rejissor', avatar: null },
-            shoots: s.shoots,
-            people: s.people,
+            shoots: [],
+            people: {},
             archive: [],
-            meta: { version: 0, uploadedAt: null, fileName: null, image: null, sample: true },
+            history: [],
+            meta: { version: 0, uploadedAt: null, fileName: null, image: null },
             notify: { enabled: false },
             theme: 'system'
         };
     }
     function load() {
+        let s = null;
         try {
             const raw = localStorage.getItem(STORE);
-            if (raw) return Object.assign(defaultState(), JSON.parse(raw));
+            if (raw) s = Object.assign(defaultState(), JSON.parse(raw));
         } catch (e) { /* */ }
-        return defaultState();
+        s = s || defaultState();
+        // Köhnə versiyadan qalan nümunə (saxta) məlumatı təmizlə
+        if (s.meta && s.meta.sample) {
+            s.shoots = []; s.people = {}; s.meta = defaultState().meta;
+        }
+        s.history = s.history || [];
+        return s;
     }
     function save() {
         try { localStorage.setItem(STORE, JSON.stringify(state)); }
-        catch (e) { toast('Yaddaş doludur — şəkil ölçüsünü kiçildin'); }
+        catch (e) {
+            // Yer çatmırsa, ən köhnə tarixçəni sil və yenidən cəhd et
+            if (state.history.length > 3) { state.history = state.history.slice(-3); try { localStorage.setItem(STORE, JSON.stringify(state)); return; } catch (e2) { /* */ } }
+            toast('Yaddaş doludur — şəkil ölçüsünü kiçildin');
+        }
     }
 
-    // ---------- Köməkçilər ----------
+    // ---------- Köhnə köməkçilər ----------
     function toast(msg, ms) {
         const t = $('toast');
         t.textContent = msg;
@@ -54,9 +67,11 @@
             $('confirm-no').onclick = () => done(false);
         });
     }
+    function fileSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+    function isImageFile(f) { return /^image\//.test(f.type) || /\.(png|jpe?g|heic|webp)$/i.test(f.name || ''); }
 
     function isMine(s) {
-        if (s.mine) return true;
+        if (s.manual || s.mine) return true;
         return (s.crew || []).some(n => C.nameMatch(n, state.profile.name));
     }
     function myShoots() { return state.shoots.filter(isMine); }
@@ -76,7 +91,9 @@
         const av = $('avatar-container');
         if (state.profile.avatar) av.innerHTML = '<img src="' + state.profile.avatar + '" alt="" class="w-full h-full object-cover">';
         else av.textContent = C.initials(state.profile.name);
-        $('version-label').textContent = state.meta.version ? 'Qrafik v' + state.meta.version : '';
+        const vl = $('version-label');
+        vl.classList.toggle('hidden', !state.meta.version);
+        vl.innerHTML = state.meta.version ? '<i class="fa-solid fa-code-branch mr-1"></i>Qrafik v' + state.meta.version + ' · tarixçə' : '';
     }
 
     function resizeImage(file, max, quality) {
@@ -138,7 +155,7 @@
                 broadcastBadge +
             '</div>' +
             (item.venue ? '<p class="text-[11px] text-gray-500 -mt-1 mb-1"><i class="fa-solid fa-location-dot mr-1 text-gray-400"></i>' + C.esc(item.venue) + '</p>' : '') +
-            '<div class="weather flex items-center gap-1.5 text-xs text-sky-700 bg-sky-50 px-2.5 py-1.5 rounded-xl my-2 border border-sky-100 font-medium" data-wx="' + item.id + '">' + weatherHTML(item) + '</div>' +
+            '<div class="weather text-xs text-sky-700 bg-sky-50 px-2.5 py-2 rounded-xl my-2 border border-sky-100 font-medium" data-wx="' + item.id + '">' + weatherHTML(item) + '</div>' +
             '<div class="grid grid-cols-2 gap-3 mt-3 pt-2 border-t border-gray-100">' +
                 '<div class="bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 text-center">' +
                     '<span class="text-[10px] text-blue-600 uppercase font-bold tracking-wide block mb-0.5">Yığışma Saatı</span>' +
@@ -153,23 +170,42 @@
         '</div>';
     }
 
+    function wxRow(label, w) {
+        if (!w) return '<div class="flex items-center gap-1.5 text-sky-600/80"><span class="w-16 shrink-0 text-[10px] font-bold uppercase text-sky-600">' + label + '</span><span class="text-[11px]">Proqnoz yoxdur</span></div>';
+        const precip = (w.snow > 0 ? 'qar ' + w.snow + ' sm' : (w.precip > 0 ? 'yağış ' + w.precip + ' mm' : ''));
+        return '<div class="flex items-start gap-1.5">' +
+            '<span class="w-16 shrink-0 text-[10px] font-bold uppercase text-sky-600 pt-0.5">' + label + ' ' + C.esc(w.time) + '</span>' +
+            '<div class="min-w-0 flex-1">' +
+                '<div class="flex items-center gap-1.5"><i class="fa-solid ' + w.icon + '"></i><strong>' + w.temp + '°C, ' + C.esc(w.txt) + ' ' + w.emoji + '</strong></div>' +
+                '<div class="text-[10px] text-sky-600 mt-0.5 flex flex-wrap gap-x-2">' +
+                    '<span><i class="fa-solid fa-droplet mr-0.5"></i>Yağıntı ehtimalı ' + (w.prob != null ? w.prob : '—') + '%</span>' +
+                    (precip ? '<span>' + C.esc(precip) + '</span>' : '') +
+                    '<span><i class="fa-solid fa-wind mr-0.5"></i>' + w.wind + ' km/s' + (w.gust ? ' (külək zərbəsi ' + w.gust + ')' : '') + '</span>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
     function weatherHTML(item) {
-        if (item.weather) return '<i class="fa-solid fa-cloud-sun text-sky-500"></i><span>Hava proqnozu: <strong>' + C.esc(item.weather) + '</strong></span>';
         const w = weatherCache[item.id];
-        if (w === undefined) return '<i class="fa-solid fa-spinner fa-spin text-sky-400"></i><span>Hava proqnozu yüklənir…</span>';
-        if (w === null) {
+        if (w === undefined) return '<div class="flex items-center gap-1.5"><i class="fa-solid fa-spinner fa-spin text-sky-400"></i><span>Hava proqnozu yüklənir…</span></div>';
+        if (w === null || w === 'error') {
             const d = C.parseISO(item.date);
-            const far = d && (d - new Date()) / 864e5 > 15;
-            return '<i class="fa-solid fa-cloud text-sky-300"></i><span class="text-sky-600">' + (far ? 'Proqnoz hələ açıqlanmayıb' : 'Hava məlumatı yoxdur') + '</span>';
+            const days = d ? (d - new Date()) / 864e5 : 0;
+            const msg = w === 'error' ? 'Hava proqnozu alınmadı (internet bağlantısını yoxlayın)'
+                : days > 15 ? 'Proqnoz hələ açıqlanmayıb (16 gündən uzaq tarix)'
+                : days < -2 ? 'Keçmiş tarix üçün proqnoz göstərilmir'
+                : 'Bu tarix və yer üçün proqnoz mövcud deyil';
+            return '<div class="flex items-center gap-1.5 text-sky-600"><i class="fa-solid fa-cloud text-sky-300"></i><span>' + msg + '</span></div>';
         }
-        return '<i class="fa-solid ' + w.icon + '"></i><span><strong>' + w.temp + '°C, ' + C.esc(w.txt) + ' ' + w.emoji + '</strong></span>' +
-            '<span class="ml-auto text-[10px] text-sky-600 whitespace-nowrap"><i class="fa-solid fa-wind mr-0.5"></i>' + w.wind + ' km/s' + (w.rain != null && w.rain > 0 ? ' · <i class="fa-solid fa-droplet mr-0.5"></i>' + w.rain + '%' : '') + '</span>';
+        return '<div class="flex items-center justify-between mb-1.5"><span class="text-[10px] font-bold uppercase tracking-wide text-sky-600"><i class="fa-solid fa-cloud-sun mr-1"></i>Hava proqnozu · ' + C.esc(w.city) + '</span></div>' +
+            '<div class="space-y-1.5">' + wxRow('Yığışma', w.gather) + wxRow('Başlama', w.start) + '</div>';
     }
 
     function loadWeather(items) {
         items.forEach(item => {
-            if (item.weather || weatherCache[item.id] !== undefined) return;
-            C.weatherForShoot(item).then(w => { weatherCache[item.id] = w; }).catch(() => { weatherCache[item.id] = null; }).then(() => {
+            if (weatherCache[item.id] !== undefined) return;
+            C.weatherForShoot(item).then(w => { weatherCache[item.id] = w; }).catch(() => { weatherCache[item.id] = 'error'; }).then(() => {
                 const el = document.querySelector('[data-wx="' + item.id + '"]');
                 if (el) el.innerHTML = weatherHTML(item);
             });
@@ -181,14 +217,12 @@
         const mine = myShoots();
         const active = mine.filter(s => status(s) === 'active').sort((a, b) => sortKey(a) - sortKey(b));
         const done = mine.filter(s => status(s) === 'completed').sort((a, b) => sortKey(b) - sortKey(a));
-        $('sample-banner').classList.toggle('hidden', !state.meta.sample);
 
         if (!mine.length) {
-            const hasShoots = state.shoots.length > 0;
             list.innerHTML = '<div class="bg-white rounded-2xl p-6 text-center border border-dashed border-gray-300">' +
                 '<i class="fa-regular fa-calendar-xmark text-3xl text-gray-300 mb-2"></i>' +
-                '<p class="text-sm font-semibold text-gray-600">' + (hasShoots ? 'Bu həftə sizin adınıza çəkiliş tapılmadı' : 'Hələ qrafik yüklənməyib') + '</p>' +
-                '<p class="text-xs text-gray-400 mt-1">' + (hasShoots ? 'Profil adınızın qrafikdəki yazılışla eyni olduğunu yoxlayın.' : '"Yüklə" düyməsi ilə Excel qrafikini əlavə edin və ya çəkilişi əllə yazın.') + '</p>' +
+                '<p class="text-sm font-semibold text-gray-600">Hələ çəkiliş yoxdur</p>' +
+                '<p class="text-xs text-gray-400 mt-1">"Yüklə" düyməsi ilə Excel qrafikini seçin və ya çəkilişi "Əllə əlavə et" ilə yazın.</p>' +
                 '</div>';
         } else {
             let html = active.map((s, i) => cardHTML(s, { next: i === 0 })).join('');
@@ -279,47 +313,89 @@
         ).join('');
     }
 
-    // ---------- Əlavə / Redaktə ----------
+    // ---------- Əllə əlavə / Redaktə ----------
+    function setTimeField(id, hhmm) {
+        const b = $(id);
+        b.dataset.time = hhmm || '';
+        const v = b.querySelector('.tf-val');
+        v.textContent = hhmm ? C.timePicker.label12(hhmm) : '--:-- --';
+        v.classList.toggle('text-gray-400', !hhmm);
+        v.classList.toggle('text-gray-900', !!hhmm);
+    }
+    function clearErrors() {
+        document.querySelectorAll('#edit-form .err').forEach(e => { e.classList.add('hidden'); e.textContent = ''; });
+        document.querySelectorAll('#edit-form .field-error').forEach(e => e.classList.remove('field-error'));
+    }
+    function setError(id, msg) {
+        const e = document.querySelector('#edit-form [data-err="' + id + '"]');
+        if (e) { e.textContent = msg; e.classList.remove('hidden'); }
+        $(id).classList.add('field-error');
+    }
+    function clearError(id) {
+        const e = document.querySelector('#edit-form [data-err="' + id + '"]');
+        if (e) { e.classList.add('hidden'); e.textContent = ''; }
+        $(id).classList.remove('field-error');
+    }
+
     function openEdit(id) {
-        const f = $('edit-form');
-        f.reset();
+        $('edit-form').reset();
+        clearErrors();
         const item = id ? state.shoots.find(s => s.id === id) : null;
         $('edit-title').textContent = item ? 'Çəkilişi Redaktə Et' : 'Yeni Çəkiliş Əlavə Et';
         $('f-id').value = item ? item.id : '';
-        $('f-date').value = item ? item.date : C.todayISO();
-        $('f-gather').value = item ? item.gather : '';
-        $('f-start').value = item ? item.start : '';
+        $('f-date').value = C.fmtDMY(item ? item.date : C.todayISO());
+        setTimeField('f-gather', item ? item.gather : '');
+        setTimeField('f-start', item ? item.start : '');
         $('f-gnote').value = item ? (item.gatherNote || '') : '';
         $('f-match').value = item ? item.match : '';
         $('f-venue').value = item ? item.venue : '';
         $('f-sport').value = item ? item.sport : 'Futbol';
         $('f-type').value = item ? item.type : 'canlı';
-        $('f-weather').value = item ? (item.weather || '') : '';
-        $('f-crew').value = item ? (item.crew || []).join(', ') : '';
         openModal('edit-modal');
     }
+
+    function validateForm() {
+        clearErrors();
+        const errs = [];
+        const dateStr = $('f-date').value.trim();
+        const iso = C.parseDMY(dateStr);
+        if (!dateStr) errs.push(['f-date', 'Tarix mütləqdir.']);
+        else if (!iso) errs.push(['f-date', 'Tarixi GG/AA/İİİİ formatında düzgün daxil edin (məs: 05/11/2026).']);
+        if (!$('f-gather').dataset.time) errs.push(['f-gather', 'Yığışma saatını seçin.']);
+        if (!$('f-start').dataset.time) errs.push(['f-start', 'Başlama saatını seçin.']);
+        if (!$('f-gnote').value.trim()) errs.push(['f-gnote', 'Yığışma qeydi mütləqdir.']);
+        if (!$('f-match').value.trim()) errs.push(['f-match', 'Çəkilişin adını daxil edin.']);
+        errs.forEach(([id, msg]) => setError(id, msg));
+        if (errs.length) {
+            const first = $(errs[0][0]);
+            first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            if (first.tagName === 'INPUT') first.focus({ preventScroll: true });
+            return null;
+        }
+        return iso;
+    }
+
     function saveEdit(e) {
         e.preventDefault();
+        const iso = validateForm();
+        if (!iso) return;
         const id = $('f-id').value;
         const old = id ? state.shoots.find(s => s.id === id) : null;
-        const item = Object.assign({}, old || { id: C.uid(), mine: true }, {
-            date: $('f-date').value,
-            gather: $('f-gather').value,
-            start: $('f-start').value,
+        const item = Object.assign({}, old || { id: C.uid(), manual: true, crew: [] }, {
+            date: iso,
+            gather: $('f-gather').dataset.time,
+            start: $('f-start').dataset.time,
             gatherNote: $('f-gnote').value.trim(),
             match: $('f-match').value.trim(),
             venue: $('f-venue').value.trim(),
             sport: $('f-sport').value,
-            type: $('f-type').value,
-            weather: $('f-weather').value.trim(),
-            crew: $('f-crew').value.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean)
+            type: $('f-type').value
         });
+        delete item.weather; // köhnə əl ilə yazılmış hava dəyərləri artıq istifadə olunmur
         if (old) {
-            // Redaktə olunan çəkiliş istifadəçidə qalmalıdır
-            if (isMine(old)) item.mine = true;
+            if (isMine(old)) item.mine = true; // redaktə olunan çəkiliş istifadəçidə qalır
             state.shoots[state.shoots.indexOf(old)] = item;
         } else state.shoots.push(item);
-        item.crew.forEach(n => { if (!(n in state.people)) state.people[n] = ''; });
         delete weatherCache[item.id];
         save();
         closeModal('edit-modal');
@@ -336,68 +412,184 @@
         toast('Çəkiliş silindi');
     }
 
-    // ---------- Qrafik yükləmə ----------
-    function showUploadResult(ok, html) {
-        const r = $('upload-result');
-        r.className = 'text-xs rounded-xl p-3 ' + (ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100');
-        r.innerHTML = html;
+    // Tarix sahəsi: GG/AA/İİİİ maskası + təqvim
+    function bindDateField() {
+        const inp = $('f-date'), nat = $('f-date-native');
+        inp.addEventListener('input', () => {
+            let d = inp.value.replace(/\D/g, '').slice(0, 8);
+            if (d.length > 4) d = d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4);
+            else if (d.length > 2) d = d.slice(0, 2) + '/' + d.slice(2);
+            inp.value = d;
+            if (C.parseDMY(d)) clearError('f-date');
+        });
+        inp.addEventListener('blur', () => {
+            const v = inp.value.trim();
+            if (v && !C.parseDMY(v)) setError('f-date', 'Tarixi GG/AA/İİİİ formatında düzgün daxil edin (məs: 05/11/2026).');
+        });
+        $('f-date-btn').addEventListener('click', () => {
+            nat.value = C.parseDMY(inp.value) || C.todayISO();
+            try { if (nat.showPicker) { nat.showPicker(); return; } } catch (e) { /* dəstəklənmir */ }
+            nat.focus(); nat.click();
+        });
+        nat.addEventListener('change', () => {
+            if (nat.value) { inp.value = C.fmtDMY(nat.value); clearError('f-date'); }
+        });
     }
-    function renderUploadMeta() {
-        $('current-version').textContent = state.meta.version
-            ? 'Cari versiya: v' + state.meta.version + ' · ' + (state.meta.fileName || '') + ' · ' + new Date(state.meta.uploadedAt).toLocaleString('az-AZ')
-            : '';
-        $('view-image').classList.toggle('hidden', !state.meta.image);
+    function bindTimeFields() {
+        document.querySelectorAll('.time-field').forEach(b => {
+            b.addEventListener('click', async () => {
+                const v = await C.timePicker.open(b.dataset.title, b.dataset.time || (b.id === 'f-start' ? $('f-gather').dataset.time : ''));
+                if (v) { setTimeField(b.id, v); clearError(b.id); }
+            });
+        });
+        ['f-gnote', 'f-match'].forEach(id => $(id).addEventListener('input', () => { if ($(id).value.trim()) clearError(id); }));
     }
 
-    function applyNewSchedule(shoots, people, fileName) {
-        // Köhnə versiyanın keçmiş günləri statistika üçün arxivə köçürülür
-        const minDate = shoots.reduce((m, s) => (!m || s.date < m ? s.date : m), null);
-        if (!state.meta.sample) {
-            myShoots().filter(s => !minDate || s.date < minDate).forEach(s => {
-                if (!state.archive.some(a => a.date === s.date && C.norm(a.match) === C.norm(s.match))) {
-                    state.archive.push({ id: s.id, date: s.date, match: s.match, venue: s.venue, type: s.type, sport: s.sport, start: s.start, gather: s.gather, mine: true });
-                }
-            });
-        }
-        // Yeni versiya köhnəni tam əvəz edir (əl ilə əlavə edilənlər də daxil)
-        state.shoots = shoots;
-        state.people = people;
-        state.meta = { version: (state.meta.sample ? 0 : state.meta.version) + 1, uploadedAt: Date.now(), fileName, image: state.meta.image, sample: false };
+    // ---------- Qrafik yükləmə: seç → təsdiq et → oxu ----------
+    function showUploadResult(kind, html) {
+        const r = $('upload-result');
+        const cls = { ok: 'bg-emerald-50 text-emerald-800 border border-emerald-100', warn: 'bg-amber-50 text-amber-800 border border-amber-200', err: 'bg-red-50 text-red-700 border border-red-100', info: 'bg-blue-50 text-blue-800 border border-blue-100' };
+        r.className = 'text-xs rounded-xl p-3 leading-relaxed ' + (cls[kind] || cls.info);
+        r.innerHTML = html;
+        r.classList.remove('hidden');
+    }
+    function renderHistory() {
+        const list = $('history-list');
+        $('view-image').classList.toggle('hidden', !state.meta.image);
+        if (!state.history.length) { list.innerHTML = '<p class="text-[11px] text-gray-400">Hələ heç bir qrafik təsdiqlənməyib.</p>'; return; }
+        list.innerHTML = state.history.slice().reverse().map((h, i) => {
+            const d = h.diff || {};
+            const per = h.period ? C.fmtDMY(h.period[0]) + ' – ' + C.fmtDMY(h.period[1]) : '';
+            return '<div class="border ' + (i === 0 ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50') + ' rounded-xl p-2.5 text-[11px]">' +
+                '<div class="flex justify-between gap-2"><span class="font-bold text-gray-900">v' + h.version + (i === 0 ? ' · aktiv' : '') + '</span><span class="text-gray-400">' + new Date(h.uploadedAt).toLocaleString('az-AZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</span></div>' +
+                '<p class="text-gray-600 break-all">' + C.esc(h.fileName) + '</p>' +
+                '<p class="text-gray-500">Dövr: ' + per + ' · sizin üçün ' + h.myCount + ' çəkiliş' +
+                (h.prevVersion ? ' · əvvəlki (v' + h.prevVersion + ') ilə: +' + (d.added || 0) + ' / −' + (d.removed || 0) + ' / ✎' + (d.changed || 0) : '') + '</p>' +
+            '</div>';
+        }).join('');
+    }
+    function openHistory() {
+        $('upload-result').classList.add('hidden');
+        renderHistory();
+        openModal('upload-modal');
+    }
+
+    function onFileChosen(file) {
+        if (!file) return;
+        pendingFile = file;
+        const img = isImageFile(file);
+        $('cu-name').textContent = file.name;
+        $('cu-meta').textContent = (img ? 'Şəkil' : /\.csv$/i.test(file.name) ? 'CSV cədvəl' : 'Excel cədvəl') + ' · ' + fileSize(file.size);
+        $('cu-icon').innerHTML = '<i class="fa-solid ' + (img ? 'fa-file-image' : 'fa-file-excel') + '"></i>';
+        $('cu-text').innerHTML = img
+            ? 'Diqqət: şəkildən cədvəlin avtomatik oxunması <strong>hələ mövcud deyil</strong>. Təsdiq etsəniz, şəkil yalnız baxmaq üçün saxlanılacaq; çəkilişlər idxal olunmayacaq.'
+            : 'Təsdiq etdikdən sonra fayl oxunacaq və yalnız <strong>' + C.esc(state.profile.name) + '</strong> adına olan çəkilişlər əsas səhifədə göstəriləcək. Eyni dövr üçün köhnə qrafik bu versiya ilə əvəzlənəcək.';
+        closeModal('upload-modal');
+        openModal('confirm-upload-modal');
+    }
+    function cancelUpload() {
+        pendingFile = null;
+        closeModal('confirm-upload-modal');
+        toast('Yükləmə ləğv edildi — heç nə dəyişmədi');
+    }
+
+    function shootKey(s) { return s.date + '|' + C.norm(s.match); }
+    function diffMine(oldList, newList) {
+        const o = new Map(oldList.map(s => [shootKey(s), s]));
+        const n = new Map(newList.map(s => [shootKey(s), s]));
+        let added = 0, removed = 0, changed = 0;
+        const details = [];
+        n.forEach((s, k) => {
+            const p = o.get(k);
+            if (!p) { added++; details.push('➕ ' + C.fmtDMY(s.date) + ' ' + s.match); return; }
+            const diffs = [];
+            if ((p.gather || '') !== (s.gather || '')) diffs.push('yığışma ' + (p.gather || '—') + '→' + (s.gather || '—'));
+            if ((p.start || '') !== (s.start || '')) diffs.push('başlama ' + (p.start || '—') + '→' + (s.start || '—'));
+            if (C.norm(p.venue) !== C.norm(s.venue)) diffs.push('yer dəyişdi');
+            if (p.type !== s.type) diffs.push('yayım növü');
+            if ((p.gatherNote || '') !== (s.gatherNote || '')) diffs.push('qeyd');
+            if (diffs.length) { changed++; details.push('✎ ' + C.fmtDMY(s.date) + ' ' + s.match + ': ' + diffs.join(', ')); }
+        });
+        o.forEach((s, k) => { if (!n.has(k)) { removed++; details.push('➖ ' + C.fmtDMY(s.date) + ' ' + s.match); } });
+        return { added, removed, changed, details };
+    }
+
+    function applyNewSchedule(res, fileName) {
+        const dates = res.shoots.map(s => s.date).sort();
+        const period = [dates[0], dates[dates.length - 1]];
+        const inPeriod = s => s.date >= period[0] && s.date <= period[1];
+        // Eyni dövrün əvvəlki idxal olunmuş versiyası (əllə əlavə edilənlər toxunulmur)
+        const prevImported = state.shoots.filter(s => !s.manual && inPeriod(s));
+        const prevMine = prevImported.filter(isMine);
+        const newMine = res.shoots.filter(s => s.crew.some(n => C.nameMatch(n, state.profile.name)));
+        const prevVersion = prevImported.length ? (prevImported[0].version || state.meta.version || null) : null;
+        const diff = diffMine(prevMine, newMine);
+
+        const version = (state.meta.version || 0) + 1;
+        res.shoots.forEach(s => { s.version = version; });
+        // Son təsdiqlənmiş versiya həmin dövr üçün əsasdır
+        state.shoots = state.shoots.filter(s => s.manual || !inPeriod(s)).concat(res.shoots);
+        Object.keys(res.people).forEach(n => { state.people[n] = res.people[n] || state.people[n] || ''; });
+        state.history.push({
+            version, prevVersion, uploadedAt: Date.now(), fileName, period,
+            myCount: newMine.length, total: res.shoots.length,
+            diff: { added: diff.added, removed: diff.removed, changed: diff.changed },
+            previous: prevImported // əvvəlki versiyanın surəti tarixçədə saxlanılır
+        });
+        if (state.history.length > HISTORY_MAX) state.history = state.history.slice(-HISTORY_MAX);
+        state.meta = Object.assign({}, state.meta, { version, uploadedAt: Date.now(), fileName });
         Object.keys(weatherCache).forEach(k => delete weatherCache[k]);
         save();
+        return { version, period, newMine, diff, prevVersion };
     }
 
-    async function handleScheduleFile(file) {
+    async function confirmUpload() {
+        const file = pendingFile;
+        pendingFile = null;
+        closeModal('confirm-upload-modal');
         if (!file) return;
+        openModal('upload-modal');
+        showUploadResult('info', '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Oxunur…');
+        renderHistory();
         const name = file.name || 'fayl';
-        const lower = name.toLowerCase();
         try {
-            if (/^image\//.test(file.type) || /\.(png|jpe?g|heic|webp)$/.test(lower)) {
+            if (isImageFile(file)) {
                 state.meta.image = await resizeImage(file, 1800, 0.82);
                 save();
-                renderUploadMeta();
-                showUploadResult(true, '<i class="fa-regular fa-image mr-1"></i><strong>Şəkil yadda saxlanıldı.</strong><br>Şəkildən cədvəlin avtomatik oxunması hələ dəstəklənmir — şəklə tətbiq daxilində baxa və çəkilişləri "Əllə əlavə et" ilə yaza bilərsiniz. Avtomatik oxuma üçün Excel (.xlsx) faylını yükləyin.');
+                renderHistory();
+                showUploadResult('warn', '<i class="fa-solid fa-triangle-exclamation mr-1"></i><strong>Şəkildən avtomatik oxuma hələ mövcud deyil.</strong><br>Şəkil yalnız baxmaq üçün saxlanıldı, heç bir çəkiliş idxal olunmadı. Çəkilişləri "Əllə əlavə et" ilə yaza və ya qrafiki Excel (.xlsx) formatında yükləyə bilərsiniz.');
                 return;
             }
             let sheets;
-            if (/\.csv$/.test(lower) || file.type === 'text/csv') sheets = C.readCsv(await file.text());
-            else if (/\.xls$/.test(lower)) throw new Error('Köhnə .xls formatı dəstəklənmir. Faylı Excel-də "Save As → .xlsx" kimi saxlayın.');
+            if (/\.csv$/i.test(name) || file.type === 'text/csv') sheets = C.readCsv(await file.text());
+            else if (/\.xls$/i.test(name)) throw new Error('Köhnə .xls formatı dəstəklənmir. Faylı Excel-də "Save As → .xlsx" kimi saxlayın.');
             else sheets = await C.readXlsx(await file.arrayBuffer());
 
             const res = C.parseSchedule(sheets, { refYear: new Date().getFullYear() });
             if (!res.shoots.length) throw new Error(res.warnings.join(' ') || 'Cədvəldə çəkiliş tapılmadı.');
-            applyNewSchedule(res.shoots, res.people, name);
-            const mineCount = myShoots().length;
-            const crewCount = Object.keys(res.people).length;
-            showUploadResult(true,
-                '<i class="fa-solid fa-circle-check mr-1"></i><strong>Yeni qrafik (v' + state.meta.version + ') tətbiq olundu.</strong><br>' +
-                res.shoots.length + ' çəkiliş, ' + crewCount + ' əməkdaş oxundu. Sizin üçün: <strong>' + mineCount + '</strong> çəkiliş.' +
-                (res.warnings.length ? '<br><span class="text-amber-700">⚠ ' + C.esc(res.warnings.join(' ')) + '</span>' : '') +
-                (!mineCount && crewCount ? '<br><span class="text-amber-700">⚠ Adınız (' + C.esc(state.profile.name) + ') qrafikdə tapılmadı — profil adını yoxlayın.</span>' : ''));
+
+            const matched = res.shoots.filter(s => s.crew.some(n => C.nameMatch(n, state.profile.name)));
+            if (!matched.length) {
+                const crewCount = Object.keys(res.people).length;
+                showUploadResult('warn', '<i class="fa-solid fa-user-xmark mr-1"></i><strong>"' + C.esc(state.profile.name) + '" adına çəkiliş tapılmadı.</strong><br>' +
+                    'Qrafik <strong>idxal edilmədi</strong>, mövcud cədvəliniz dəyişməz qaldı.<br>' +
+                    (crewCount ? 'Faylda ' + crewCount + ' əməkdaş və ' + res.shoots.length + ' çəkiliş var. Profil adınızın qrafikdəki yazılışla eyni olduğunu yoxlayın (adınıza toxunaraq dəyişə bilərsiniz).' : 'Faylda heyət bölgüsü (ad-soyad cədvəli) tapılmadı.'));
+                return;
+            }
+
+            const r = applyNewSchedule(res, name);
+            const d = r.diff;
+            showUploadResult('ok',
+                '<i class="fa-solid fa-circle-check mr-1"></i><strong>Qrafik v' + r.version + ' təsdiqləndi.</strong><br>' +
+                'Dövr: ' + C.fmtDMY(r.period[0]) + ' – ' + C.fmtDMY(r.period[1]) + '. Sizin üçün <strong>' + r.newMine.length + '</strong> çəkiliş göstərilir.' +
+                (r.prevVersion ? '<br>Əvvəlki versiya (v' + r.prevVersion + ') ilə müqayisə: ' + d.added + ' yeni, ' + d.changed + ' dəyişən, ' + d.removed + ' silinən.' +
+                    (d.details.length ? '<div class="mt-1.5 space-y-0.5 text-[11px]">' + d.details.slice(0, 8).map(x => '<div>' + C.esc(x) + '</div>').join('') + '</div>' : '') : '') +
+                (res.warnings.length ? '<br><span class="text-amber-700">⚠ ' + C.esc(res.warnings.join(' ')) + '</span>' : ''));
+            renderHistory();
             refresh();
         } catch (err) {
             console.error(err);
-            showUploadResult(false, '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' + C.esc(err.message || 'Fayl oxunmadı'));
+            showUploadResult('err', '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' + C.esc(err.message || 'Fayl oxunmadı') + '<br>Heç bir dəyişiklik edilmədi.');
         }
     }
 
@@ -480,7 +672,10 @@
         document.addEventListener('click', e => {
             const close = e.target.closest('[data-close]');
             if (close) { closeModal(close.dataset.close); return; }
-            if (e.target.classList.contains('modal')) { closeModal(e.target.id); return; }
+            if (e.target.classList.contains('modal') && e.target.id !== 'tp-modal') {
+                if (e.target.id === 'confirm-upload-modal') { cancelUpload(); return; }
+                closeModal(e.target.id); return;
+            }
             const m = e.target.closest('[data-menu]');
             const open = m ? $('menu-' + m.dataset.menu) : null;
             document.querySelectorAll('.menu').forEach(el => { if (el !== open) el.classList.add('hidden'); });
@@ -493,23 +688,21 @@
 
         $('open-stats').onclick = () => { fillMonths(); updateStats(); openModal('stats-modal'); };
         $('stats-month').onchange = updateStats;
-        $('open-upload').onclick = () => { $('upload-result').classList.add('hidden'); renderUploadMeta(); openModal('upload-modal'); };
+
+        // Yüklə → fayl seçimi → təsdiq pəncərəsi
+        $('open-upload').onclick = () => $('schedule-input').click();
         $('pick-file').onclick = () => $('schedule-input').click();
-        $('schedule-input').onchange = async e => {
-            const f = e.target.files[0];
-            e.target.value = '';
-            $('upload-result').classList.remove('hidden');
-            showUploadResult(true, '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Oxunur…');
-            await handleScheduleFile(f);
-        };
+        $('schedule-input').onchange = e => { const f = e.target.files[0]; e.target.value = ''; onFileChosen(f); };
+        $('cu-ok').onclick = confirmUpload;
+        $('cu-cancel').onclick = cancelUpload;
+        $('cu-x').onclick = cancelUpload;
+        $('version-label').onclick = openHistory;
         $('view-image').onclick = () => { $('image-view').src = state.meta.image; openModal('image-modal'); };
 
         $('add-shoot').onclick = () => openEdit(null);
         $('edit-form').onsubmit = saveEdit;
-        $('clear-sample').onclick = async () => {
-            state.shoots = []; state.people = {}; state.meta.sample = false; save(); refresh();
-            toast('Nümunə məlumat silindi');
-        };
+        bindDateField();
+        bindTimeFields();
 
         $('team-search').addEventListener('input', renderTeam);
 
@@ -544,12 +737,14 @@
         // Statusları dəqiqədə bir yenilə; tətbiqə qayıdanda da
         setInterval(renderSchedules, 60 * 1000);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
-        // Android geri düyməsi: açıq modalı bağla
+        // Android geri düyməsi: açıq pəncərəni bağla
         const App = g.Capacitor && g.Capacitor.Plugins && g.Capacitor.Plugins.App;
         if (App && App.addListener) {
             App.addListener('backButton', () => {
-                const open = Array.from(document.querySelectorAll('.modal')).find(m => !m.classList.contains('hidden'));
-                if (open) closeModal(open.id); else if (currentTab !== 'my') switchTab('my'); else App.exitApp();
+                if (C.timePicker.isOpen()) { C.timePicker.close(); return; }
+                const open = Array.from(document.querySelectorAll('.modal')).reverse().find(m => !m.classList.contains('hidden'));
+                if (open) { if (open.id === 'confirm-upload-modal') cancelUpload(); else closeModal(open.id); }
+                else if (currentTab !== 'my') switchTab('my'); else App.exitApp();
             });
         }
     }
