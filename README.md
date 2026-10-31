@@ -4,8 +4,8 @@ Yayım heyəti (rejissor, texniki direktor, təkrar operator, səs mühəndisi v
 
 ## İmkanlar
 - **Cədvəlim** — yalnız profil adınıza (Soyad Ad) uyğun çəkilişlər. Bitənlər avtomatik aşağıya düşür və "Tamamlandı" olur, növbəti çəkiliş "Növbəti" nişanı ilə yuxarıda görünür.
-- Başlıqda **CBC SPORT BROADCAST** loqosu mərkəzdədir; istifadəçinin tam adı kəsilmədən (lazım olsa iki sətrə keçərək) göstərilir.
-- Yığışma və başlama saatları ayrıca qutularda, yığışma qeydi ilə (məs. `BOS`). Kartlarda saat 24 saat formatındadır.
+- Başlıqda **CBC SPORT BROADCAST** loqosu mərkəzdədir; ad və soyad bir sətirdə, kəsilmədən göstərilir.
+- Yığışma və başlama saatları ayrıca qutularda, yığışma qeydi ilə (məs. `BOS`); STS və matçönü+flaş məlumatı. Bütün saatlar 24 saat formatındadır.
 - Ezamiyyət (avtobus ikonu) və ya Bakı — yer sütununda region şəhəri yoxdursa, avtomatik **Bakı**.
 - **Avtomatik hava proqnozu** (Open-Meteo, açarsız): çəkiliş yerinə və tarixinə görə, **yığışma** və **başlama** saatları üçün ayrıca — temperatur, vəziyyət (yağış/qar/külək), yağıntı ehtimalı və miqdarı, külək sürəti və zərbəsi. Proqnoz yoxdursa (16 gündən uzaq, keçmiş tarix, internet yoxdur) bu açıq yazılır; hava heç vaxt əl ilə daxil edilmir və uydurulmur.
 - `⋮` menyusu: **Redaktə et** / **Sil**.
@@ -25,8 +25,8 @@ Yayım heyəti (rejissor, texniki direktor, təkrar operator, səs mühəndisi v
 ### Əllə əlavə et
 | Sahə | Qayda |
 |---|---|
-| Tarix * | `GG/AA/İİİİ` formatı, avtomatik `/` maskası, təqvim düyməsi; boş və ya səhv tarix (məs. 31/02) qəbul olunmur |
-| Yığışma saatı * / Başlama saatı * | Təkər tipli seçici (saat · dəqiqə · AM/PM), yuxarıda **X** bağlama, **Təsdiq et** ilə tətbiq; siçan (təkərcik, sürüşdürmə, klik), toxunma və klaviatura (↑/↓) ilə işləyir; daxildə 24 saat (`HH:MM`) saxlanılır |
+| Tarix * | `GG/AA/İİİİ`; sahəyə toxunanda təqvim açılır (yuxarıda X, aşağıda Təsdiq et) |
+| Yığışma saatı * / Başlama saatı (istəyə bağlı) | 24 saat: yazmaq (`1530` → `15:30`) və ya saat ikonu ilə təkər seçici (00–23 · 00–59), yuxarıda **X**, aşağıda **Təsdiq et**; siçan, toxunma və klaviatura ilə işləyir |
 | Yığışma qeydi * | Boş başlayır, mütləqdir |
 | Çəkiliş (məs: Sabah-Qarabağ) * | Boş başlayır, mütləqdir |
 | Çəkiliş yeri | Boş başlayır; boş qalsa Bakı sayılır; hava proqnozu buna görə tapılır |
@@ -35,7 +35,11 @@ Yayım heyəti (rejissor, texniki direktor, təkrar operator, səs mühəndisi v
 Hava və Heyət sahələri formadan çıxarılıb.
 
 ## Excel formatı
-`sablon/CBC-qrafik-sablonu.xlsx` faylına baxın:
+Komandaya göndərilən qrafik formatı birbaşa dəstəklənir (nümunə: `sablon/Qrafik-27.10-01.11.2026.xlsx`):
+1. **Yuxarıda:** `STS | Tarix | Yığışma Saatı | Başlama Saatı | Çəkiliş | Çəkiliş yeri | İdman növü | Yayım | Matç önc+flaş`
+2. **Aşağıda:** `Vəzifə | Soyad + Ad | 27 oktyabr | 27 oktyabr | 28 oktyabr | …` — xanada oyunun (qısaldılmış) adı yazılır.
+
+Alternativ sadə format — `sablon/CBC-qrafik-sablonu.xlsx`:
 1. **Yuxarıda oyunlar:** `№ | Tarix | Gün | Yığışma saatı | Başlama saatı | Oyun | Yer | İdman növü | Yayım`
 2. **Aşağıda heyət matrisi:** `Soyad Ad | Vəzifə | 1 | 2 | 3 …` — xanaya `x` yazmaq kifayətdir. Sütun başlığı oyunun `№`-si, oyun adı və ya tarix ola bilər.
 

@@ -87,6 +87,7 @@
     // ---------- Profil ----------
     function renderProfile() {
         $('profile-name').textContent = state.profile.name || 'Adınızı daxil edin';
+        fitName();
         $('profile-role').textContent = state.profile.role || 'Vəzifə';
         const av = $('avatar-container');
         if (state.profile.avatar) av.innerHTML = '<img src="' + state.profile.avatar + '" alt="" class="w-full h-full object-cover">';
@@ -94,6 +95,14 @@
         const vl = $('version-label');
         vl.classList.toggle('hidden', !state.meta.version);
         vl.innerHTML = state.meta.version ? '<i class="fa-solid fa-code-branch mr-1"></i>Qrafik v' + state.meta.version + ' · tarixçə' : '';
+    }
+
+    /** Ad və soyad bir sətirdə qalsın: yer çatmırsa şrift kiçilir (kəsilmir) */
+    function fitName() {
+        const el = $('profile-name');
+        let size = 17;
+        el.style.fontSize = size + 'px';
+        while (el.scrollWidth > el.clientWidth + 0.5 && size > 11) { size -= 0.5; el.style.fontSize = size + 'px'; }
     }
 
     function resizeImage(file, max, quality) {
@@ -155,6 +164,8 @@
                 broadcastBadge +
             '</div>' +
             (item.venue ? '<p class="text-[11px] text-gray-500 -mt-1 mb-1"><i class="fa-solid fa-location-dot mr-1 text-gray-400"></i>' + C.esc(item.venue) + '</p>' : '') +
+            (item.sts ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-truck mr-1 text-gray-400"></i>STS: <span class="font-semibold text-gray-700">' + C.esc(item.sts) + '</span></p>' : '') +
+            (item.flash ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-bolt mr-1 text-amber-500"></i>Matçönü + flaş: <span class="font-semibold text-gray-700">' + C.esc(item.flash) + '</span></p>' : '') +
             '<div class="weather text-xs text-sky-700 bg-sky-50 px-2.5 py-2 rounded-xl my-2 border border-sky-100 font-medium" data-wx="' + item.id + '">' + weatherHTML(item) + '</div>' +
             '<div class="grid grid-cols-2 gap-3 mt-3 pt-2 border-t border-gray-100">' +
                 '<div class="bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 text-center">' +
@@ -199,7 +210,11 @@
             return '<div class="flex items-center gap-1.5 text-sky-600"><i class="fa-solid fa-cloud text-sky-300"></i><span>' + msg + '</span></div>';
         }
         return '<div class="flex items-center justify-between mb-1.5"><span class="text-[10px] font-bold uppercase tracking-wide text-sky-600"><i class="fa-solid fa-cloud-sun mr-1"></i>Hava proqnozu · ' + C.esc(w.city) + '</span></div>' +
-            '<div class="space-y-1.5">' + wxRow('Yığışma', w.gather) + wxRow('Başlama', w.start) + '</div>';
+            '<div class="space-y-1.5">' +
+                (w.day ? wxRow('Gün ərzində', w.day) : '') +
+                (item.gather ? wxRow('Yığışma', w.gather) : '') +
+                (item.start ? wxRow('Başlama', w.start) : '') +
+            '</div>';
     }
 
     function loadWeather(items) {
@@ -314,13 +329,13 @@
     }
 
     // ---------- Əllə əlavə / Redaktə ----------
-    function setTimeField(id, hhmm) {
-        const b = $(id);
-        b.dataset.time = hhmm || '';
-        const v = b.querySelector('.tf-val');
-        v.textContent = hhmm ? C.timePicker.label12(hhmm) : '--:-- --';
-        v.classList.toggle('text-gray-400', !hhmm);
-        v.classList.toggle('text-gray-900', !!hhmm);
+    function setDateField(iso) {
+        const b = $('f-date'), d = C.parseISO(iso);
+        b.dataset.date = d ? iso : '';
+        $('f-date-day').textContent = d ? C.pad(d.getDate()) : '--';
+        $('f-date-mon').textContent = d ? C.MONTHS[d.getMonth()].slice(0, 3) : '';
+        $('f-date-main').textContent = d ? C.fmtDMY(iso) : 'Tarix seçin';
+        $('f-date-sub').textContent = d ? C.weekday(iso) + ' · ' + C.fmtDate(iso) : '';
     }
     function clearErrors() {
         document.querySelectorAll('#edit-form .err').forEach(e => { e.classList.add('hidden'); e.textContent = ''; });
@@ -343,9 +358,9 @@
         const item = id ? state.shoots.find(s => s.id === id) : null;
         $('edit-title').textContent = item ? 'Çəkilişi Redaktə Et' : 'Yeni Çəkiliş Əlavə Et';
         $('f-id').value = item ? item.id : '';
-        $('f-date').value = C.fmtDMY(item ? item.date : C.todayISO());
-        setTimeField('f-gather', item ? item.gather : '');
-        setTimeField('f-start', item ? item.start : '');
+        setDateField(item ? item.date : C.todayISO());
+        $('f-gather').value = item ? (item.gather || '') : '';
+        $('f-start').value = item ? (item.start || '') : '';
         $('f-gnote').value = item ? (item.gatherNote || '') : '';
         $('f-match').value = item ? item.match : '';
         $('f-venue').value = item ? item.venue : '';
@@ -357,12 +372,12 @@
     function validateForm() {
         clearErrors();
         const errs = [];
-        const dateStr = $('f-date').value.trim();
-        const iso = C.parseDMY(dateStr);
-        if (!dateStr) errs.push(['f-date', 'Tarix mütləqdir.']);
-        else if (!iso) errs.push(['f-date', 'Tarixi GG/AA/İİİİ formatında düzgün daxil edin (məs: 05/11/2026).']);
-        if (!$('f-gather').dataset.time) errs.push(['f-gather', 'Yığışma saatını seçin.']);
-        if (!$('f-start').dataset.time) errs.push(['f-start', 'Başlama saatını seçin.']);
+        const iso = $('f-date').dataset.date;
+        if (!iso || !C.parseISO(iso)) errs.push(['f-date', 'Tarix mütləqdir — təqvimdən seçin.']);
+        const gt = $('f-gather').value.trim(), st = $('f-start').value.trim();
+        if (!gt) errs.push(['f-gather', 'Yığışma saatı mütləqdir.']);
+        else if (!C.timePicker.isValid(gt)) errs.push(['f-gather', 'Saatı 24 saat formatında yazın (məs: 07:30).']);
+        if (st && !C.timePicker.isValid(st)) errs.push(['f-start', 'Saatı 24 saat formatında yazın (məs: 15:30).']);
         if (!$('f-gnote').value.trim()) errs.push(['f-gnote', 'Yığışma qeydi mütləqdir.']);
         if (!$('f-match').value.trim()) errs.push(['f-match', 'Çəkilişin adını daxil edin.']);
         errs.forEach(([id, msg]) => setError(id, msg));
@@ -383,8 +398,8 @@
         const old = id ? state.shoots.find(s => s.id === id) : null;
         const item = Object.assign({}, old || { id: C.uid(), manual: true, crew: [] }, {
             date: iso,
-            gather: $('f-gather').dataset.time,
-            start: $('f-start').dataset.time,
+            gather: $('f-gather').value.trim(),
+            start: $('f-start').value.trim(),
             gatherNote: $('f-gnote').value.trim(),
             match: $('f-match').value.trim(),
             venue: $('f-venue').value.trim(),
@@ -412,34 +427,32 @@
         toast('Çəkiliş silindi');
     }
 
-    // Tarix sahəsi: GG/AA/İİİİ maskası + təqvim
+    // Tarix: müasir təqvim (X — bağla, Təsdiq et — tətbiq et)
     function bindDateField() {
-        const inp = $('f-date'), nat = $('f-date-native');
-        inp.addEventListener('input', () => {
-            let d = inp.value.replace(/\D/g, '').slice(0, 8);
-            if (d.length > 4) d = d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4);
-            else if (d.length > 2) d = d.slice(0, 2) + '/' + d.slice(2);
-            inp.value = d;
-            if (C.parseDMY(d)) clearError('f-date');
-        });
-        inp.addEventListener('blur', () => {
-            const v = inp.value.trim();
-            if (v && !C.parseDMY(v)) setError('f-date', 'Tarixi GG/AA/İİİİ formatında düzgün daxil edin (məs: 05/11/2026).');
-        });
-        $('f-date-btn').addEventListener('click', () => {
-            nat.value = C.parseDMY(inp.value) || C.todayISO();
-            try { if (nat.showPicker) { nat.showPicker(); return; } } catch (e) { /* dəstəklənmir */ }
-            nat.focus(); nat.click();
-        });
-        nat.addEventListener('change', () => {
-            if (nat.value) { inp.value = C.fmtDMY(nat.value); clearError('f-date'); }
+        $('f-date').addEventListener('click', async () => {
+            const v = await C.datePicker.open($('f-date').dataset.date);
+            if (v) { setDateField(v); clearError('f-date'); }
         });
     }
+    // Saat: 24 saat formatında yazmaq (məs. 1530 → 15:30) və ya təkərlə seçmək
     function bindTimeFields() {
-        document.querySelectorAll('.time-field').forEach(b => {
+        document.querySelectorAll('.time-input').forEach(inp => {
+            inp.addEventListener('input', () => {
+                const pos = inp.value.length;
+                inp.value = C.timePicker.mask(inp.value);
+                if (C.timePicker.isValid(inp.value)) clearError(inp.id);
+            });
+            inp.addEventListener('blur', () => {
+                const v = inp.value.trim();
+                if (/^\d{2}$/.test(v) && +v < 24) inp.value = v + ':00';
+                if (inp.value && !C.timePicker.isValid(inp.value)) setError(inp.id, 'Saatı 24 saat formatında yazın (məs: 15:30).');
+            });
+        });
+        document.querySelectorAll('[data-tp]').forEach(b => {
             b.addEventListener('click', async () => {
-                const v = await C.timePicker.open(b.dataset.title, b.dataset.time || (b.id === 'f-start' ? $('f-gather').dataset.time : ''));
-                if (v) { setTimeField(b.id, v); clearError(b.id); }
+                const inp = $(b.dataset.tp);
+                const v = await C.timePicker.open(b.dataset.title, inp.value || (inp.id === 'f-start' ? $('f-gather').value : ''));
+                if (v) { inp.value = v; clearError(inp.id); }
             });
         });
         ['f-gnote', 'f-match'].forEach(id => $(id).addEventListener('input', () => { if ($(id).value.trim()) clearError(id); }));
@@ -629,7 +642,7 @@
         document.documentElement.classList.toggle('dark', dark);
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', dark ? '#111827' : '#ffffff');
-        $('theme-icon').className = 'fa-solid ' + THEME_ICON[t] + ' text-sm';
+        if ($('theme-icon')) $('theme-icon').className = 'fa-solid ' + THEME_ICON[t] + ' text-sm';
         document.querySelectorAll('#theme-seg [data-theme]').forEach(b => {
             const on = b.dataset.theme === t;
             b.classList.toggle('bg-white', on);
@@ -672,7 +685,7 @@
         document.addEventListener('click', e => {
             const close = e.target.closest('[data-close]');
             if (close) { closeModal(close.dataset.close); return; }
-            if (e.target.classList.contains('modal') && e.target.id !== 'tp-modal') {
+            if (e.target.classList.contains('modal') && e.target.id !== 'tp-modal' && e.target.id !== 'dp-modal') {
                 if (e.target.id === 'confirm-upload-modal') { cancelUpload(); return; }
                 closeModal(e.target.id); return;
             }
@@ -727,7 +740,8 @@
         $('notify-toggle').addEventListener('change', toggleNotify);
 
         const order = ['light', 'dark', 'system'];
-        $('theme-btn').onclick = () => setTheme(order[(order.indexOf(state.theme || 'system') + 1) % 3]);
+        if ($('theme-btn')) $('theme-btn').onclick = () => setTheme(order[(order.indexOf(state.theme || 'system') + 1) % 3]);
+        g.addEventListener('resize', fitName);
         document.querySelectorAll('#theme-seg [data-theme]').forEach(b => { b.onclick = () => setTheme(b.dataset.theme); });
         if (darkMQ) {
             const onSys = () => { if ((state.theme || 'system') === 'system') applyTheme(); };
@@ -742,6 +756,7 @@
         if (App && App.addListener) {
             App.addListener('backButton', () => {
                 if (C.timePicker.isOpen()) { C.timePicker.close(); return; }
+                if (C.datePicker.isOpen()) { C.datePicker.close(); return; }
                 const open = Array.from(document.querySelectorAll('.modal')).reverse().find(m => !m.classList.contains('hidden'));
                 if (open) { if (open.id === 'confirm-upload-modal') cancelUpload(); else closeModal(open.id); }
                 else if (currentTab !== 'my') switchTab('my'); else App.exitApp();

@@ -17,7 +17,9 @@
         venue: /yer|stadion|venue|mekan|arena|meydanca|seher/,
         sport: /idman|sport|nov/,
         type: /yayim|canli|format|^tip|nov yayim/,
-        crew: /heyet|crew|emekdaslar|briqada|isciler/
+        crew: /heyet|crew|emekdaslar|briqada|isciler/,
+        sts: /^sts$|^sng$|^sts sng|^sng sts|^peyk|^masin/,
+        flash: /onc|flas|flash|matconu|matcsonu/
     };
     const NAME_H = /soyad|^ad$|^ad |emekdas|isci|^name|^adi/;
     const ROLE_H = /vezife|rol|position|pese|funksiya/;
@@ -61,6 +63,10 @@
             const mins = Math.round(v * 1440);
             return { time: C.pad(Math.floor(mins / 60) % 24) + ':' + C.pad(mins % 60), note: '' };
         }
+        if (typeof v === 'number' && v >= 1 && v < 24) {
+            const h = Math.floor(v), mm = Math.round((v - h) * 100);
+            if (mm < 60) return { time: C.pad(h) + ':' + C.pad(mm), note: '' };
+        }
         const s = String(v).trim();
         const m = /(\d{1,2})\s*[:.\-]\s*(\d{2})/.exec(s);
         if (m && +m[1] < 24) {
@@ -85,7 +91,8 @@
         const s = C.norm(raw);
         if (!s) return null;
         // Sıra vacibdir: "Yığışma saatı" həm də "saat" sözünü daşıyır
-        for (const k of ['num', 'gather', 'crew', 'type', 'sport', 'date', 'day', 'start', 'match', 'venue']) {
+        if (/yeri$|^yer$|stadion|mekan|venue|arena/.test(s)) return 'venue';
+        for (const k of ['num', 'sts', 'flash', 'gather', 'crew', 'type', 'sport', 'date', 'day', 'start', 'match', 'venue']) {
             if (H[k].test(s)) return k;
         }
         return null;
@@ -112,6 +119,21 @@
     function isMatrixHeader(row) {
         const t = (row || []).map(c => C.norm(cellText(c)));
         return t.some(s => NAME_H.test(s)) && (t.some(s => ROLE_H.test(s)) || t.filter(Boolean).length >= 3);
+    }
+
+    // Qısaldılmış oyun adını (məs. "A/K Kəpəz - Baku S", "U 15", "Basketbol") cədvəldəki oyunla tutuşdurur
+    function tokens(t) { return C.norm(t).split(' ').filter(x => x.length >= 2 || /\d/.test(x)); }
+    function matchScore(cell, shoot) {
+        const a = tokens(cell);
+        if (!a.length) return 0;
+        const b = tokens(shoot.match);
+        let sc = 0;
+        a.forEach(t => {
+            if (b.includes(t)) sc += 2;
+            else if (b.some(u => u.length > 3 && t.length > 3 && (u.startsWith(t) || t.startsWith(u)))) sc += 1;
+        });
+        if (shoot.sport && a.includes(C.norm(shoot.sport))) sc += 2;
+        return sc;
     }
 
     function splitCrew(v) {
@@ -157,6 +179,8 @@
                     sport: C.guessSport(sportCell) || C.guessSport(match) || (sportCell ? (sportCell[0].toUpperCase() + sportCell.slice(1)) : 'Futbol'),
                     type: parseType(c.type != null ? row[c.type] : ''),
                     crew: c.crew != null ? splitCrew(row[c.crew]) : [],
+                    sts: c.sts != null ? cellText(row[c.sts]) : '',
+                    flash: c.flash != null ? cellText(row[c.flash]) : '',
                     order: shoots.length
                 };
                 if (!['Futbol', 'Basketbol', 'Voleybol', 'Futzal', 'Həndbol'].includes(shoot.sport)) shoot.sport = 'Digər';
@@ -167,6 +191,11 @@
             warnings.push('Oyunlar cədvəlinin başlığı tapılmadı (Tarix, Oyun, Başlama/Yığışma saatı, Yer sütunları olmalıdır).');
             return { shoots, people, warnings };
         }
+
+        // Başlıqda il yoxdursa (məs. "27 oktyabr") — qrafikin öz ili
+        const years = {};
+        shoots.forEach(sh => { const y = sh.date.slice(0, 4); years[y] = (years[y] || 0) + 1; });
+        const schedYear = +Object.keys(years).sort((a, b) => years[b] - years[a])[0] || refYear;
 
         // 2) Heyət matrisi
         let assigned = 0;
@@ -181,6 +210,8 @@
                 if (nameCol < 0) continue;
                 // Sütun → oyun(lar) xəritəsi
                 const colMap = {};
+                const dateOcc = {};   // eyni tarixli neçənci sütundur
+                const colPos = {};
                 head.forEach((h, ci) => {
                     if (ci === nameCol || ci === roleCol || h == null) return;
                     const txt = cellText(h);
@@ -193,8 +224,12 @@
                     }
                     if (!found.length) found = shoots.filter(s => C.norm(s.match) === n || (n.length > 4 && C.norm(s.match).includes(n)) || (n.length > 4 && n.includes(C.norm(s.match))));
                     if (!found.length) {
-                        const d = parseDate(h, refYear);
-                        if (d) found = shoots.filter(s => s.date === d);
+                        const d = parseDate(h, schedYear);
+                        if (d) {
+                            found = shoots.filter(s => s.date === d);
+                            dateOcc[d] = (dateOcc[d] || 0) + 1;
+                            colPos[ci] = dateOcc[d] - 1; // eyni tarixin 1-ci, 2-ci sütunu → həmin günün 1-ci, 2-ci oyunu
+                        }
                     }
                     if (found.length) colMap[ci] = found;
                 });
@@ -213,9 +248,15 @@
                         if (!vn || /^(0|-|yox|no|off|istirahet|i)$/.test(vn)) return;
                         let targets = list;
                         if (list.length > 1) {
-                            // Bir tarixə bir neçə oyun düşürsə — xanadakı nömrə/ada görə seç
-                            const pick = list.filter(s => (s.num && C.norm(s.num) === vn) || (vn.length > 2 && C.norm(s.match).includes(vn)));
-                            if (pick.length) targets = pick;
+                            // Bir tarixə bir neçə oyun düşürsə — xanadakı nömrə/ada/idman növünə görə seç
+                            const exact = list.filter(s => s.num && C.norm(s.num) === vn);
+                            if (exact.length) targets = exact;
+                            else {
+                                const scored = list.map(s => ({ s, sc: matchScore(v, s) })).sort((a, b) => b.sc - a.sc);
+                                if (scored[0].sc > 0 && scored[0].sc > (scored[1] ? scored[1].sc : 0)) targets = [scored[0].s];
+                                else if (colPos[ci] != null && list[colPos[ci]]) targets = [list[colPos[ci]]];
+                                else return; // qeyri-müəyyəndir — səhv təyinat etmirik
+                            }
                         }
                         targets.forEach(s => { if (!s.crew.some(x => C.nameMatch(x, name))) { s.crew.push(name); assigned++; } });
                     });

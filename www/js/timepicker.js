@@ -1,30 +1,15 @@
-/* Təkər tipli (wheel) saat seçici — 12 saatlıq AM/PM.
-   Daxili saxlama 24 saat formatındadır ("HH:MM").
+/* Təkər tipli (wheel) saat seçici — 24 saat formatı (00–23 : 00–59).
    Siçan (təkərcik, sürüşdürmə, klik), toxunma və klaviatura ilə işləyir. */
 (function (g) {
     'use strict';
     const ITEM = 40; // bir elementin hündürlüyü (px) — CSS ilə eyni olmalıdır
     const pad = n => String(n).padStart(2, '0');
+    const VALID = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-    function to12(hhmm) {
-        const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
-        if (!m) return null;
-        const h24 = +m[1];
-        return { h: h24 % 12 === 0 ? 12 : h24 % 12, m: +m[2], ap: h24 < 12 ? 'AM' : 'PM' };
-    }
-    function to24(h, m, ap) {
-        const h24 = (h % 12) + (ap === 'PM' ? 12 : 0);
-        return pad(h24) + ':' + pad(m);
-    }
-    function label12(hhmm) {
-        const t = to12(hhmm);
-        return t ? pad(t.h) + ':' + pad(t.m) + ' ' + t.ap : '';
-    }
-
-    function Wheel(el, values, fmt, onChange) {
+    function Wheel(el, values, onChange) {
         this.el = el; this.values = values; this.onChange = onChange;
         el.innerHTML = '<div class="tp-spacer"></div>' +
-            values.map((v, i) => '<div class="tp-item" data-i="' + i + '">' + fmt(v) + '</div>').join('') +
+            values.map((v, i) => '<div class="tp-item" data-i="' + i + '">' + pad(v) + '</div>').join('') +
             '<div class="tp-spacer"></div>';
         this.items = Array.from(el.querySelectorAll('.tp-item'));
         this.index = 0; this.target = 0;
@@ -49,8 +34,8 @@
             if (steps) this.set(Math.max(0, Math.min(values.length - 1, this.target + steps)), false);
         }, { passive: false });
         el.addEventListener('keydown', e => {
-            if (e.key === 'ArrowDown') { e.preventDefault(); this.set(Math.min(values.length - 1, this.index + 1), true); }
-            if (e.key === 'ArrowUp') { e.preventDefault(); this.set(Math.max(0, this.index - 1), true); }
+            if (e.key === 'ArrowDown') { e.preventDefault(); this.set(Math.min(values.length - 1, this.target + 1), true); }
+            if (e.key === 'ArrowUp') { e.preventDefault(); this.set(Math.max(0, this.target - 1), true); }
         });
         // Siçanla sürüşdürmə (toxunmada brauzerin öz sürüşdürməsi işləyir)
         let startY = 0, startTop = 0, down = false;
@@ -93,23 +78,15 @@
     let wheels = null, current = null;
     const $ = id => document.getElementById(id);
 
-    function preview() {
-        if (!wheels) return;
-        const v = to24(wheels.h.value(), wheels.m.value(), wheels.ap.value());
-        $('tp-preview').textContent = '24 saat formatında: ' + v;
-    }
     function ensure() {
         if (wheels) return;
-        const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // iOS kimi: 12 ilk sırada
-        const mins = Array.from({ length: 60 }, (_, i) => i);
         wheels = {
-            h: new Wheel($('tp-h'), hours, pad, preview),
-            m: new Wheel($('tp-m'), mins, pad, preview),
-            ap: new Wheel($('tp-ap'), ['AM', 'PM'], v => v, preview)
+            h: new Wheel($('tp-h'), Array.from({ length: 24 }, (_, i) => i)),
+            m: new Wheel($('tp-m'), Array.from({ length: 60 }, (_, i) => i))
         };
-        $('tp-close').addEventListener('click', close);
+        $('tp-close').addEventListener('click', () => close());
         $('tp-ok').addEventListener('click', () => {
-            const v = to24(wheels.h.value(), wheels.m.value(), wheels.ap.value());
+            const v = pad(wheels.h.value()) + ':' + pad(wheels.m.value());
             if (current) current.resolve(v);
             close(true);
         });
@@ -121,22 +98,26 @@
         if (current && done !== true) current.resolve(null);
         current = null;
     }
-    /** Seçicini açır. Təsdiq edilsə "HH:MM" (24 saat), bağlansa null qaytarır. */
+    /** Seçicini açır. Təsdiq edilsə "HH:MM", X ilə bağlansa null qaytarır. */
     function open(title, value) {
         ensure();
         $('tp-title').textContent = title || 'Saat';
         const m = $('tp-modal');
         m.classList.remove('hidden'); m.classList.add('flex');
-        const t = to12(value) || to12('12:00');
-        // Görünən olduqdan sonra mövqeləri qur
+        const mm = VALID.exec(value || '') || [null, '12', '00'];
         requestAnimationFrame(() => {
-            wheels.h.set(t.h % 12, false);
-            wheels.m.set(t.m, false);
-            wheels.ap.set(t.ap === 'AM' ? 0 : 1, false);
-            preview();
+            wheels.h.set(+mm[1], false);
+            wheels.m.set(+mm[2], false);
         });
         return new Promise(res => { current = { resolve: res }; });
     }
+    /** Yazılmış mətni "HH:MM" formatına salır (məs. "1530" → "15:30", "930" → "09:30") */
+    function mask(raw) {
+        let d = String(raw || '').replace(/\D/g, '');
+        if (d.length && +d[0] > 2) d = '0' + d;
+        d = d.slice(0, 4);
+        return d.length > 2 ? d.slice(0, 2) + ':' + d.slice(2) : d;
+    }
 
-    g.CBC = Object.assign(g.CBC || {}, { timePicker: { open, close, label12, to12, to24, isOpen: () => !!current } });
+    g.CBC = Object.assign(g.CBC || {}, { timePicker: { open, close, mask, isValid: v => VALID.test(v || ''), isOpen: () => !!current } });
 })(window);

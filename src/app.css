@@ -70,7 +70,7 @@ html, body, .bg-white, .bg-gray-50, .bg-gray-100 { transition: background-color 
 
 /* ===== Təkər tipli saat seçici ===== */
 .tp-sheet { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
-.tp-wrap { position: relative; display: grid; grid-template-columns: 1fr 14px 1fr 1fr; align-items: center; height: 200px; user-select: none; -webkit-user-select: none; }
+.tp-wrap { position: relative; display: grid; grid-template-columns: 1fr 14px 1fr; align-items: center; height: 200px; user-select: none; -webkit-user-select: none; }
 .tp-band { position: absolute; left: 0; right: 0; top: 80px; height: 40px; border-radius: 12px; background: #eff6ff; border: 1px solid #dbeafe; pointer-events: none; }
 .tp-sep { position: relative; text-align: center; font-weight: 800; font-size: 20px; color: #1e3a8a; }
 .tp-col { position: relative; height: 200px; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; cursor: grab; outline: none;
@@ -86,3 +86,8 @@ html, body, .bg-white, .bg-gray-50, .bg-gray-100 { transition: background-color 
 .dark .tp-item { color: #6b7280; }
 .field-error { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, .15); }
 .dark .text-red-600 { color: #f87171; }
+
+.tp-24 { max-width: 240px; margin: 0 auto; }
+.dp-day:active { transform: scale(.94); }
+.dark .dp-day.text-gray-800 { color: #e5e7eb; }
+.dark .ring-blue-300 { --tw-ring-color: rgba(96, 165, 250, .6); }

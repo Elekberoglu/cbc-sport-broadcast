@@ -1,5 +1,19 @@
 # Dəyişikliklər
 
+## 1.2.0 — 31.10.2026
+
+### Real qrafik formatı
+- Komandaya göndərilən qrafikin formatı tam dəstəklənir: `STS | Tarix | Yığışma Saatı | Başlama Saatı | Çəkiliş | Çəkiliş yeri | İdman növü | Yayım | Matç önc+flaş` və altında `Vəzifə | Soyad + Ad | 27 oktyabr | 27 oktyabr | …` heyət cədvəli.
+- Heyət cədvəlində qısaldılmış adlar oyunlarla avtomatik tutuşdurulur ("A/K Kəpəz - Baku S", "U 15", "Basketbol", "Qəbələ-Qarabağ"). Eyni tarixli iki sütun həmin günün 1-ci və 2-ci oyunu sayılır. Qeyri-müəyyən xana təyin edilmir.
+- "13.00 BOS", "30.10..2026" kimi yazılışlar və Excel-də rəqəm kimi saxlanmış saatlar (13.3 → 13:30) düzgün oxunur.
+- STS və "Matç önc+flaş" məlumatı kartda göstərilir.
+
+### İnterfeys
+- Ad və soyad başlıqda **bir sətirdə** yan-yana; yer çatmasa şrift kiçilir, kəsilmir. Görünüş rejimi düyməsi başlıqdan Profil pəncərəsinə keçdi.
+- **Başlama saatı istəyə bağlıdır.** Saat yoxdursa, hava proqnozu gün ərzinə (15:00) görə göstərilir.
+- Saatlar **24 saat formatında**: birbaşa yazmaq olar (`1530` → `15:30`, `930` → `09:30`) və ya saat ikonu ilə 00–23 / 00–59 təkərindən seçmək; AM/PM yoxdur.
+- **Tarix**: müasir sahə və öz təqvimimiz — yuxarıda **X**, aşağıda **Təsdiq et**; Clear/Cancel/Set yoxdur; ay oxlarla və ya sürüşdürməklə dəyişir.
+
 ## 1.1.0 — 31.10.2026
 
 ### Başlıq

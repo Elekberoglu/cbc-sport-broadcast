@@ -73,8 +73,10 @@
         if (!data || !data.time) return null;
         const gather = atHour(data, shoot.date, shoot.gather, city.name);
         const start = atHour(data, shoot.date, shoot.start, city.name);
-        if (!gather && !start) return null;
-        return { city: city.name, gather, start };
+        // Saat göstərilməyibsə — günün ortası (15:00) üçün ümumi proqnoz
+        const day = (!shoot.gather && !shoot.start) ? atHour(data, shoot.date, '15:00', city.name) : null;
+        if (!gather && !start && !day) return null;
+        return { city: city.name, gather, start, day };
     }
 
     g.CBC = Object.assign(g.CBC || {}, { weatherForShoot: forShoot });

@@ -42,7 +42,7 @@
                     </div>
                     <div class="min-w-0 flex-1">
                         <button id="profile-btn" class="text-left w-full">
-                            <h1 id="profile-name" class="font-bold text-gray-900 leading-tight break-words">—</h1>
+                            <h1 id="profile-name" class="font-bold text-gray-900 leading-tight whitespace-nowrap" style="font-size:17px">—</h1>
                             <p class="text-xs text-blue-600 font-semibold flex items-center gap-1"><span id="profile-role">—</span><i class="fa-solid fa-pen text-[9px] text-gray-300"></i></p>
                         </button>
                         <button id="version-label" class="hidden text-[10px] text-gray-400 font-medium mt-0.5"></button>
@@ -50,9 +50,6 @@
                 </div>
 
                 <div class="flex items-center gap-1.5 shrink-0">
-                    <button id="theme-btn" class="p-2 bg-gray-100 text-gray-600 rounded-xl active:bg-gray-200 transition text-xs w-9 h-9 flex items-center justify-center" aria-label="Görünüş rejimi">
-                        <i id="theme-icon" class="fa-solid fa-circle-half-stroke text-sm"></i>
-                    </button>
                     <button id="open-stats" class="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:bg-blue-100 transition flex items-center gap-1 text-xs font-semibold" aria-label="Statistika">
                         <i class="fa-solid fa-chart-pie text-sm"></i>
                         <span class="hidden sm:inline">Statistika</span>
@@ -126,7 +123,7 @@
         <!-- FOOTER -->
         <footer class="pt-6 pb-2 text-center border-t border-gray-200">
             <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
-            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.1</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.2</p>
         </footer>
     </main>
 
@@ -254,26 +251,34 @@
                 <input type="hidden" id="f-id">
                 <div>
                     <label for="f-date" class="font-medium text-gray-700 block mb-1">Tarix <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <input id="f-date" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="GG/AA/İİİİ" class="w-full border border-gray-200 rounded-xl p-2.5 pr-11 bg-gray-50 text-sm">
-                        <button type="button" id="f-date-btn" class="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 text-blue-600" aria-label="Təqvimi aç"><i class="fa-regular fa-calendar"></i></button>
-                        <input type="date" id="f-date-native" tabindex="-1" aria-hidden="true" class="absolute right-0 bottom-0 w-px h-px opacity-0 pointer-events-none">
-                    </div>
+                    <button type="button" id="f-date" data-date="" class="w-full border border-gray-200 rounded-xl p-2 bg-gray-50 flex items-center gap-3 text-left active:bg-gray-100">
+                        <span class="w-11 h-11 rounded-lg bg-blue-600 text-white flex flex-col items-center justify-center leading-none shrink-0 shadow-sm">
+                            <span id="f-date-day" class="text-base font-black">--</span>
+                            <span id="f-date-mon" class="text-[9px] font-bold uppercase mt-0.5 opacity-90"></span>
+                        </span>
+                        <span class="flex-1 min-w-0">
+                            <span id="f-date-main" class="block text-sm font-bold text-gray-900 tabular-nums">Tarix seçin</span>
+                            <span id="f-date-sub" class="block text-[11px] text-gray-500"></span>
+                        </span>
+                        <i class="fa-regular fa-calendar text-blue-600 text-base mr-1"></i>
+                    </button>
                     <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-date"></p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label for="f-gather" class="font-medium text-gray-700 block mb-1">Yığışma saatı <span class="text-red-500">*</span></label>
-                        <button type="button" id="f-gather" data-time="" data-title="Yığışma saatı" class="time-field w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm text-left flex items-center justify-between">
-                            <span class="tf-val text-gray-400">--:-- --</span><i class="fa-regular fa-clock text-gray-400"></i>
-                        </button>
+                        <div class="relative">
+                            <input id="f-gather" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" class="time-input w-full border border-gray-200 rounded-xl p-2.5 pr-10 bg-gray-50 text-sm tabular-nums">
+                            <button type="button" data-tp="f-gather" data-title="Yığışma saatı" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 text-blue-600" aria-label="Yığışma saatı seç"><i class="fa-regular fa-clock"></i></button>
+                        </div>
                         <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-gather"></p>
                     </div>
                     <div>
-                        <label for="f-start" class="font-medium text-gray-700 block mb-1">Başlama saatı <span class="text-red-500">*</span></label>
-                        <button type="button" id="f-start" data-time="" data-title="Başlama saatı" class="time-field w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm text-left flex items-center justify-between">
-                            <span class="tf-val text-gray-400">--:-- --</span><i class="fa-regular fa-clock text-gray-400"></i>
-                        </button>
+                        <label for="f-start" class="font-medium text-gray-700 block mb-1">Başlama saatı <span class="text-gray-400 font-normal">(istəyə bağlı)</span></label>
+                        <div class="relative">
+                            <input id="f-start" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" class="time-input w-full border border-gray-200 rounded-xl p-2.5 pr-10 bg-gray-50 text-sm tabular-nums">
+                            <button type="button" data-tp="f-start" data-title="Başlama saatı" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 text-blue-600" aria-label="Başlama saatı seç"><i class="fa-regular fa-clock"></i></button>
+                        </div>
                         <p class="err hidden text-[11px] text-red-600 mt-1" data-err="f-start"></p>
                     </div>
                 </div>
@@ -312,6 +317,28 @@
         </div>
     </div>
 
+    <!-- CALENDAR -->
+    <div id="dp-modal" class="modal fixed inset-0 bg-black/50 z-[65] hidden items-end sm:items-center justify-center">
+        <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-4 shadow-xl tp-sheet" role="dialog" aria-label="Tarix seçin">
+            <div class="flex items-center justify-between mb-3">
+                <button type="button" id="dp-close" class="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="Bağla"><i class="fa-solid fa-xmark text-base"></i></button>
+                <h3 class="font-bold text-sm text-gray-900">Tarix seçin</h3>
+                <span class="w-9"></span>
+            </div>
+            <div class="flex items-center justify-between mb-3 px-1">
+                <button type="button" id="dp-prev" class="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="Əvvəlki ay"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                <span id="dp-month" class="font-bold text-base text-gray-900"></span>
+                <button type="button" id="dp-next" class="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="Növbəti ay"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+            </div>
+            <div class="grid grid-cols-7 text-center text-[10px] font-bold text-gray-400 uppercase mb-1">
+                <span>B.e</span><span>Ç.a</span><span>Ç</span><span>C.a</span><span>C</span><span class="text-red-400">Ş</span><span class="text-red-400">B</span>
+            </div>
+            <div id="dp-grid" class="grid grid-cols-7 gap-1 min-h-[264px] content-start"></div>
+            <p id="dp-preview" class="text-center text-xs text-gray-600 font-semibold mt-2"></p>
+            <button type="button" id="dp-ok" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow mt-3">Təsdiq et</button>
+        </div>
+    </div>
+
     <!-- WHEEL TIME PICKER -->
     <div id="tp-modal" class="modal fixed inset-0 bg-black/50 z-[65] hidden items-end sm:items-center justify-center">
         <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-4 shadow-xl tp-sheet" role="dialog" aria-labelledby="tp-title">
@@ -320,14 +347,12 @@
                 <h3 id="tp-title" class="font-bold text-sm text-gray-900">Saat</h3>
                 <span class="w-9"></span>
             </div>
-            <div class="tp-wrap">
+            <div class="tp-wrap tp-24">
                 <div class="tp-band"></div>
                 <div class="tp-col" id="tp-h" tabindex="0" aria-label="Saat"></div>
                 <div class="tp-sep">:</div>
                 <div class="tp-col" id="tp-m" tabindex="0" aria-label="Dəqiqə"></div>
-                <div class="tp-col tp-ap" id="tp-ap" tabindex="0" aria-label="AM/PM"></div>
             </div>
-            <p id="tp-preview" class="text-center text-[11px] text-gray-500 mt-2"></p>
             <button type="button" id="tp-ok" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow mt-3">Təsdiq et</button>
         </div>
     </div>
@@ -353,6 +378,7 @@
     <script src="js/weather.js"></script>
     <script src="js/notify.js"></script>
     <script src="js/timepicker.js"></script>
+    <script src="js/datepicker.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
