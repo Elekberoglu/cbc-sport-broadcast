@@ -19,7 +19,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Use fixed signing key (updates install over old version)
-        run: mkdir -p ~/.android && cp keystore/debug.keystore ~/.android/debug.keystore
+        run: mkdir -p ~/.android && cp debug.keystore ~/.android/debug.keystore
       - run: npm install
       - run: npm run android:init
       - name: Build APK
