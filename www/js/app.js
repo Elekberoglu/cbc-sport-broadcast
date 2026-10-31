@@ -38,8 +38,7 @@
             s.shoots = []; s.people = {}; s.meta = defaultState().meta;
         }
         s.history = s.history || [];
-        s.work = Object.assign(defaultState().work, s.work || {});
-        s.work.durations = Object.assign(defaultState().work.durations, (s.work && s.work.durations) || {});
+        s.work = defaultState().work; // sabit qaydalar (ayarlar paneli çıxarılıb)
         return s;
     }
     function save() {
@@ -470,14 +469,6 @@
         const monthM = allMine().filter(s => C.monthKey(s.date) === monthKey).reduce((a, s) => a + shootMinutes(s).m, 0);
         $('month-hours').innerHTML = 'Ay üzrə cəmi: <strong class="text-gray-900">' + fmtH(monthM) + '</strong> · boz xətt — həftəlik norma';
     }
-    function renderWorkSettings() {
-        const labels = ['Futbol', 'Basketbol', 'Voleybol', 'Futzal', 'Həndbol', 'Digər'];
-        $('dur-inputs').innerHTML = labels.map(k =>
-            '<label class="flex items-center justify-between gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1"><span class="text-gray-700">' + k + '</span>' +
-            '<span class="flex items-center gap-1"><input data-dur="' + k + '" type="number" min="0.5" max="12" step="0.25" inputmode="decimal" value="' + state.work.durations[k] + '" class="w-12 text-right text-sm bg-transparent"><span class="text-gray-400">s</span></span></label>').join('');
-        $('norm-input').value = state.work.norm;
-    }
-
     function updateStats() {
         const key = $('stats-month').value;
         const pal = palette();
@@ -951,18 +942,9 @@
             if (del) { deleteShoot(del.dataset.del); }
         });
 
-        $('open-stats').onclick = () => { selectedWeek = null; fillMonths(); renderWorkSettings(); $('norm-label').textContent = state.work.norm + ' saat'; updateStats(); openModal('stats-modal'); };
+        $('open-stats').onclick = () => { selectedWeek = null; fillMonths(); updateStats(); openModal('stats-modal'); };
         $('stats-month').onchange = () => { selectedWeek = null; updateStats(); };
         $('week-rows').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) { selectedWeek = b.dataset.week; renderWeeks($('stats-month').value); } });
-        $('dur-inputs').addEventListener('change', e => {
-            const i = e.target.closest('[data-dur]'); if (!i) return;
-            const v = parseFloat(String(i.value).replace(',', '.'));
-            if (v > 0 && v <= 12) { state.work.durations[i.dataset.dur] = v; save(); updateStats(); } else i.value = state.work.durations[i.dataset.dur];
-        });
-        $('norm-input').addEventListener('change', e => {
-            const v = parseFloat(String(e.target.value).replace(',', '.'));
-            if (v >= 1 && v <= 80) { state.work.norm = v; $('norm-label').textContent = v + ' saat'; save(); updateStats(); } else e.target.value = state.work.norm;
-        });
         $('month-bars').addEventListener('click', e => { const b = e.target.closest('[data-month]'); if (b) { $('stats-month').value = b.dataset.month; selectedWeek = null; updateStats(); } });
 
         // Yüklə → fayl seçimi → təsdiq pəncərəsi

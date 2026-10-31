@@ -1,5 +1,9 @@
 # Dəyişikliklər
 
+## 1.5.1 — 31.10.2026
+- "Hesablama ayarları" paneli çıxarıldı; iş saatı sabit qaydalarla hesablanır (Futbol/Basketbol/Voleybol/Digər 2 saat, Futzal/Həndbol 1.5 saat, norma 36 saat). Əvvəl dəyişdirilmiş dəyərlər sıfırlanır.
+- Tətbiq ikonasında "CBC" yazısının altına "SPORT" əlavə olundu.
+
 ## 1.5.0 — 31.10.2026
 - **Həftəlik iş saatı** (Statistika): həftə bazar ertəsindən bazara qədər; həftənin saatları dairəvi göstəricidə normaya nisbətlə (%), "normaya X qalıb" və ya "normadan X artıq" (⚠). Ayın həftələri zolaqlarla, boz xətt — norma; həftəyə toxunanda seçilir. Ay üzrə cəmi saat.
 - **Hesablama:** iş vaxtı = yığışma saatından oyunun sonuna qədər; oyunun sonu = başlama saatı + idman növünün müddəti. Saatı olmayan çəkiliş üçün yalnız oyun müddəti götürülür və "təxmini" (~) işarələnir.
