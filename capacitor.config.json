@@ -1,0 +1,12 @@
+{
+  "appId": "az.cbcsport.broadcast",
+  "appName": "CBC Sport Broadcast",
+  "webDir": "www",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1200, "launchAutoHide": true, "backgroundColor": "#1e3a8a", "showSpinner": false },
+    "LocalNotifications": { "iconColor": "#2563eb" },
+    "StatusBar": { "style": "LIGHT", "backgroundColor": "#ffffff", "overlaysWebView": false }
+  }
+}

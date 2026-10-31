@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CBC Broadcast">
+    <title>CBC Sport Broadcast</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
+    <script>
+        // Rejimi səhifə çəkilməzdən əvvəl tətbiq et (ağ yanıb-sönmə olmasın)
+        try {
+            var t = (JSON.parse(localStorage.getItem('cbc_sport_broadcast_v1') || '{}').theme) || 'system';
+            if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+        } catch (e) {}
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased">
+
+    <!-- HEADER -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 safe-top">
+        <div class="max-w-md mx-auto px-4 pt-2 pb-3">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    <span class="text-[10px] font-black tracking-[0.2em] text-gray-400 uppercase">CBC Sport Broadcast</span>
+                </div>
+                <span id="version-label" class="text-[10px] text-gray-400 font-medium"></span>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="relative shrink-0">
+                        <div id="avatar-container" class="w-12 h-12 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-lg shadow overflow-hidden">HT</div>
+                        <input type="file" id="avatar-input" accept="image/*" class="hidden">
+                        <button id="avatar-btn" aria-label="Profil şəkli" class="absolute -bottom-1 -right-1 bg-gray-700 text-white w-6 h-6 rounded-full text-[10px] shadow flex items-center justify-center active:bg-gray-800">
+                            <i class="fa-solid fa-camera"></i>
+                        </button>
+                    </div>
+                    <button id="profile-btn" class="text-left min-w-0">
+                        <h1 id="profile-name" class="font-bold text-gray-900 leading-tight truncate">—</h1>
+                        <p class="text-xs text-blue-600 font-semibold flex items-center gap-1"><span id="profile-role">—</span><i class="fa-solid fa-pen text-[9px] text-gray-300"></i></p>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="theme-btn" class="p-2.5 bg-gray-100 text-gray-600 rounded-xl active:bg-gray-200 transition text-xs w-9 flex items-center justify-center" aria-label="Görünüş rejimi">
+                        <i id="theme-icon" class="fa-solid fa-circle-half-stroke text-sm"></i>
+                    </button>
+                    <button id="open-stats" class="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:bg-blue-100 transition flex items-center gap-1 text-xs font-semibold" aria-label="Statistika">
+                        <i class="fa-solid fa-chart-pie text-sm"></i>
+                        <span class="hidden sm:inline">Statistika</span>
+                    </button>
+                    <button id="open-upload" class="p-2.5 bg-blue-600 text-white rounded-xl active:bg-blue-700 transition flex items-center gap-1 text-xs font-semibold shadow">
+                        <i class="fa-solid fa-file-arrow-up text-sm"></i>
+                        <span>Yüklə</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="max-w-md mx-auto px-4 mt-4 space-y-5 safe-bottom">
+
+        <!-- TABS -->
+        <div class="flex bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+            <button id="tab-my" data-tab="my" class="tab-btn flex-1 py-3 text-center text-sm active-tab transition">
+                <i class="fa-solid fa-calendar-day mr-1"></i> Cədvəlim
+            </button>
+            <button id="tab-team" data-tab="team" class="tab-btn flex-1 py-3 text-center text-sm text-gray-500 transition">
+                <i class="fa-solid fa-users mr-1"></i> Bütün Komanda
+            </button>
+        </div>
+
+        <!-- MY SCHEDULE -->
+        <section id="section-my" class="space-y-4">
+            <div id="sample-banner" class="hidden bg-indigo-50 border border-indigo-100 text-indigo-800 rounded-2xl p-3 text-xs flex items-center justify-between gap-2">
+                <span><i class="fa-solid fa-circle-info mr-1"></i>Nümunə məlumat göstərilir. Öz qrafikinizi yükləyin.</span>
+                <button id="clear-sample" class="font-bold underline shrink-0">Təmizlə</button>
+            </div>
+
+            <div class="flex justify-between items-center px-1">
+                <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Həftəlik Çəkiliş Cədvəli</h2>
+                <button id="add-shoot" class="text-xs text-blue-600 font-semibold flex items-center">
+                    <i class="fa-solid fa-plus mr-1"></i> Əllə əlavə et
+                </button>
+            </div>
+
+            <div id="schedule-list" class="space-y-3"></div>
+
+            <!-- SMART REMINDER -->
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 shadow-sm flex items-start gap-3 mt-8">
+                <div class="bg-amber-500 text-white w-10 h-10 rounded-xl text-lg shadow-sm flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                        <h3 class="text-sm font-bold text-amber-900">Ağıllı Xatırlatma Sistemi</h3>
+                        <label class="switch shrink-0">
+                            <input type="checkbox" id="notify-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                        Çəkiliş günləri yığışma saatından <strong>1 saat qabaq</strong> telefonunuza bildiriş göndəriləcək.
+                    </p>
+                    <p id="notify-status" class="text-[11px] text-amber-700 font-semibold mt-1.5"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TEAM -->
+        <section id="section-team" class="space-y-4 hidden">
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="search" id="team-search" placeholder="Ad, soyad və ya vəzifə ilə axtar..." class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div id="team-list" class="space-y-3"></div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="pt-6 pb-2 text-center border-t border-gray-200">
+            <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.0</p>
+        </footer>
+    </main>
+
+    <!-- STATS MODAL -->
+    <div id="stats-modal" class="modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <h3 class="font-bold text-lg text-gray-900">Hesabat və Statistika</h3>
+                <button data-close="stats-modal" class="text-gray-400 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div>
+                <label for="stats-month" class="text-xs text-gray-500 font-medium block mb-1">Ay seçin:</label>
+                <select id="stats-month" class="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="bg-blue-50 border border-blue-100 p-4 rounded-2xl text-center">
+                    <i class="fa-solid fa-video text-blue-600 text-xl mb-1"></i>
+                    <p class="text-2xl font-black text-blue-900" id="stat-total">0</p>
+                    <p class="text-xs text-blue-700 font-medium mt-1">Ümumi Çəkiliş</p>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center">
+                    <i class="fa-solid fa-bus text-emerald-600 text-xl mb-1"></i>
+                    <p class="text-2xl font-black text-emerald-900" id="stat-ezam">0 gün</p>
+                    <p class="text-xs text-emerald-700 font-medium mt-1">Ezamiyyət</p>
+                </div>
+            </div>
+            <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-600 space-y-1.5">
+                <div class="flex justify-between"><span>Bakı daxili çəkilişlər:</span><span class="font-bold text-gray-800" id="stat-baku">0</span></div>
+                <div class="flex justify-between"><span>Canlı yayımlar:</span><span class="font-bold text-gray-800" id="stat-live">0</span></div>
+                <div class="flex justify-between"><span>Videoyazılar:</span><span class="font-bold text-gray-800" id="stat-rec">0</span></div>
+            </div>
+            <div id="stat-list" class="max-h-48 overflow-y-auto space-y-1"></div>
+        </div>
+    </div>
+
+    <!-- UPLOAD MODAL -->
+    <div id="upload-modal" class="modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <h3 class="font-bold text-lg text-gray-900">Qrafik Yüklə</h3>
+                <button data-close="upload-modal" class="text-gray-400 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-gray-500 leading-relaxed">
+                Yeni Excel və ya Şəkil qrafikini yükləyin. Əvvəlki cədvəl avtomatik sıfırlanacaq və sonuncu versiya tətbiq olunacaq.
+            </p>
+            <input type="file" id="schedule-input" accept=".xlsx,.csv,image/*,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="hidden">
+            <button id="pick-file" class="w-full border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center bg-gray-50 transition active:border-blue-500">
+                <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-500 mb-2"></i>
+                <p class="text-xs font-semibold text-gray-700">Faylı seçin</p>
+                <p class="text-[10px] text-gray-400 mt-1">XLSX, CSV, PNG, JPG dəstəklənir</p>
+            </button>
+            <div id="upload-result" class="hidden text-xs rounded-xl p-3"></div>
+            <div id="current-version" class="text-[11px] text-gray-400 text-center"></div>
+            <button id="view-image" class="hidden w-full text-xs font-semibold text-blue-600 py-2"><i class="fa-regular fa-image mr-1"></i>Son yüklənən qrafik şəklinə bax</button>
+        </div>
+    </div>
+
+    <!-- IMAGE VIEWER -->
+    <div id="image-modal" class="modal fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-2">
+        <button data-close="image-modal" class="absolute top-4 right-4 safe-top-btn text-white w-10 h-10 text-2xl"><i class="fa-solid fa-xmark"></i></button>
+        <div class="w-full h-full overflow-auto flex items-center justify-center">
+            <img id="image-view" alt="Qrafik" class="max-w-none w-full">
+        </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div id="profile-modal" class="modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <form id="profile-form" class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-3 shadow-xl text-xs">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                <h3 class="font-bold text-base text-gray-900">Profil</h3>
+                <button type="button" data-close="profile-modal" class="text-gray-400 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-gray-500 leading-relaxed">Adınız qrafikdə necə yazılıbsa, elə daxil edin. "Cədvəlim" bölməsi bu ada görə süzülür.</p>
+            <div>
+                <label for="pf-name" class="font-medium text-gray-700 block mb-1">Soyad Ad</label>
+                <input id="pf-name" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Hüseynov Tamerlan">
+            </div>
+            <div>
+                <label for="pf-role" class="font-medium text-gray-700 block mb-1">Vəzifə</label>
+                <input id="pf-role" list="role-list" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Rejissor">
+                <datalist id="role-list">
+                    <option value="Rejissor"><option value="Texniki direktor"><option value="Təkrar operator"><option value="Səs mühəndisi"><option value="Operator"><option value="STS rəhbəri"><option value="Texniki inzibatçı"><option value="Qrafika operatoru">
+                </datalist>
+            </div>
+            <div>
+                <span class="font-medium text-gray-700 block mb-1">Görünüş rejimi</span>
+                <div id="theme-seg" class="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-xl text-xs font-semibold">
+                    <button type="button" data-theme="light" class="py-2 rounded-lg"><i class="fa-solid fa-sun mr-1"></i>Aydın</button>
+                    <button type="button" data-theme="dark" class="py-2 rounded-lg"><i class="fa-solid fa-moon mr-1"></i>Qaranlıq</button>
+                    <button type="button" data-theme="system" class="py-2 rounded-lg"><i class="fa-solid fa-mobile-screen mr-1"></i>Sistem</button>
+                </div>
+            </div>
+            <button type="button" id="remove-avatar" class="text-red-600 font-semibold"><i class="fa-solid fa-trash-can mr-1"></i>Profil şəklini sil</button>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow active:bg-blue-700">Yadda Saxla</button>
+        </form>
+    </div>
+
+    <!-- ADD / EDIT MODAL -->
+    <div id="edit-modal" class="modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                <h3 class="font-bold text-base text-gray-900" id="edit-title">Çəkiliş Redaktəsi</h3>
+                <button data-close="edit-modal" class="text-gray-400 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="edit-form" class="space-y-3 text-xs">
+                <input type="hidden" id="f-id">
+                <div>
+                    <label for="f-date" class="font-medium text-gray-700 block mb-1">Tarix</label>
+                    <input type="date" id="f-date" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label for="f-gather" class="font-medium text-gray-700 block mb-1">Yığışma Saatı</label>
+                        <input type="time" id="f-gather" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                    </div>
+                    <div>
+                        <label for="f-start" class="font-medium text-gray-700 block mb-1">Başlama Saatı</label>
+                        <input type="time" id="f-start" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label for="f-gnote" class="font-medium text-gray-700 block mb-1">Yığışma qeydi (məs: BOS)</label>
+                    <input id="f-gnote" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="BOS">
+                </div>
+                <div>
+                    <label for="f-match" class="font-medium text-gray-700 block mb-1">Çəkiliş / Oyun</label>
+                    <input id="f-match" required class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Səbail - Zirə">
+                </div>
+                <div>
+                    <label for="f-venue" class="font-medium text-gray-700 block mb-1">Çəkiliş Yeri (boş qalsa Bakı sayılır)</label>
+                    <input id="f-venue" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Məs: Yevlax ş. stadionu">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label for="f-sport" class="font-medium text-gray-700 block mb-1">İdman Növü</label>
+                        <select id="f-sport" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                            <option>Futbol</option><option>Basketbol</option><option>Voleybol</option><option>Futzal</option><option>Həndbol</option><option>Digər</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="f-type" class="font-medium text-gray-700 block mb-1">Yayım</label>
+                        <select id="f-type" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                            <option value="canlı">Canlı</option>
+                            <option value="yazı">Videoyazı</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="f-weather" class="font-medium text-gray-700 block mb-1">Hava (boş qalsa avtomatik proqnoz)</label>
+                    <input id="f-weather" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="18°C, Yağışlı">
+                </div>
+                <div>
+                    <label for="f-crew" class="font-medium text-gray-700 block mb-1">Heyət (vergüllə, istəyə görə)</label>
+                    <textarea id="f-crew" rows="2" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm" placeholder="Qasımov Fuad, Əliyev Rizvan"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow active:bg-blue-700 mt-1">Yadda Saxla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirm-modal" class="modal fixed inset-0 bg-black/50 z-[60] hidden items-center justify-center p-6">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 shadow-xl text-center space-y-4">
+            <div class="w-12 h-12 mx-auto rounded-full bg-red-50 text-red-600 flex items-center justify-center text-xl"><i class="fa-solid fa-trash-can"></i></div>
+            <p id="confirm-text" class="text-sm text-gray-700 font-medium"></p>
+            <div class="grid grid-cols-2 gap-2 text-sm font-bold">
+                <button id="confirm-no" class="py-2.5 rounded-xl bg-gray-100 text-gray-700">Ləğv et</button>
+                <button id="confirm-yes" class="py-2.5 rounded-xl bg-red-600 text-white">Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-[70] bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg opacity-0 pointer-events-none transition-opacity max-w-[90vw] text-center"></div>
+
+    <script src="vendor/jszip.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/xlsx-reader.js"></script>
+    <script src="js/parser.js"></script>
+    <script src="js/weather.js"></script>
+    <script src="js/notify.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

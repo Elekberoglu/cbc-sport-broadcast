@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html { -webkit-tap-highlight-color: transparent; }
+body { overscroll-behavior-y: none; }
+.active-tab { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-top-btn { margin-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: calc(3rem + env(safe-area-inset-bottom)); }
+input, select, textarea { font-size: 16px; }
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: #e5e7eb; border-radius: 999px; transition: .2s; cursor: pointer; }
+.slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.switch input:checked + .slider { background: #f59e0b; }
+.switch input:checked + .slider::before { transform: translateX(18px); }
+
+/* ===== Qaranlıq rejim ===== */
+.dark { color-scheme: dark; }
+.dark body.bg-gray-100 { background: #0b1220; color: #e5e7eb; }
+.dark .bg-white { background-color: #1f2937; }
+.dark .bg-gray-50 { background-color: #111827; }
+.dark .bg-gray-100 { background-color: #374151; }
+.dark .bg-gray-200 { background-color: #4b5563; }
+.dark .bg-gray-900 { background-color: #374151; }
+.dark .text-gray-900 { color: #f9fafb; }
+.dark .text-gray-800 { color: #e5e7eb; }
+.dark .text-gray-700 { color: #d1d5db; }
+.dark .text-gray-600, .dark .text-gray-500 { color: #9ca3af; }
+.dark .border-gray-100, .dark .border-gray-200 { border-color: #374151; }
+.dark .border-gray-300 { border-color: #4b5563; }
+.dark .bg-blue-50, .dark .bg-blue-50\/70 { background-color: rgba(37, 99, 235, .16); }
+.dark .bg-blue-100 { background-color: rgba(59, 130, 246, .28); }
+.dark .border-blue-100 { border-color: rgba(59, 130, 246, .3); }
+.dark .border-blue-200 { border-color: rgba(59, 130, 246, .5); }
+.dark .ring-blue-100 { --tw-ring-color: rgba(59, 130, 246, .25); }
+.dark .text-blue-900 { color: #dbeafe; }
+.dark .text-blue-700 { color: #93c5fd; }
+.dark .text-blue-600 { color: #60a5fa; }
+.dark .active-tab { color: #60a5fa; border-bottom-color: #3b82f6; }
+.dark .bg-sky-50 { background-color: rgba(14, 165, 233, .12); }
+.dark .border-sky-100 { border-color: rgba(14, 165, 233, .25); }
+.dark .text-sky-700 { color: #7dd3fc; }
+.dark .text-sky-600 { color: #38bdf8; }
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, .12); }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, .2); }
+.dark .border-emerald-100 { border-color: rgba(16, 185, 129, .3); }
+.dark .text-emerald-900, .dark .text-emerald-800, .dark .text-emerald-700 { color: #6ee7b7; }
+.dark .bg-indigo-50 { background-color: rgba(99, 102, 241, .15); }
+.dark .border-indigo-100 { border-color: rgba(99, 102, 241, .3); }
+.dark .text-indigo-800 { color: #c7d2fe; }
+.dark .bg-gradient-to-r.from-amber-50 { background-image: linear-gradient(to right, rgba(245, 158, 11, .14), rgba(249, 115, 22, .08)); }
+.dark .border-amber-200 { border-color: rgba(245, 158, 11, .35); }
+.dark .text-amber-900 { color: #fde68a; }
+.dark .text-amber-800 { color: #fcd34d; }
+.dark .text-amber-700 { color: #fbbf24; }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, .15); }
+.dark .border-red-100 { border-color: rgba(239, 68, 68, .3); }
+.dark .text-red-700 { color: #fca5a5; }
+.dark .slider { background: #4b5563; }
+.dark .shadow-sm, .dark .shadow-md, .dark .shadow-lg, .dark .shadow-xl { --tw-shadow-color: rgba(0, 0, 0, .5); }
+.dark ::placeholder { color: #6b7280; }
+html, body, .bg-white, .bg-gray-50, .bg-gray-100 { transition: background-color .2s ease; }
+.dark .text-amber-700\/70 { color: rgba(251, 191, 36, .7); }

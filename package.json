@@ -1,0 +1,30 @@
+{
+  "name": "cbc-sport-broadcast",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CBC Sport Broadcast — yayım heyəti üçün iş qrafiki (Android və iOS)",
+  "scripts": {
+    "css": "node scripts/build-css.mjs",
+    "serve": "npx http-server www -p 8080 -c-1",
+    "android:init": "npx cap add android && node scripts/patch-android.mjs && npx capacitor-assets generate --android && npx cap sync android",
+    "ios:init": "npx cap add ios && node scripts/patch-ios.mjs && npx capacitor-assets generate --ios && npx cap sync ios",
+    "sync": "npx cap sync",
+    "android:open": "npx cap open android",
+    "ios:open": "npx cap open ios",
+    "android:apk": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0",
+    "@capacitor/local-notifications": "^6.1.2",
+    "@capacitor/splash-screen": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.2.0",
+    "tailwindcss": "^4.1.0"
+  }
+}
