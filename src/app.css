@@ -113,3 +113,4 @@ details > summary::-webkit-details-marker { display: none; }
 .dark .action-primary .action-icon { background: rgba(16, 185, 129, .18); color: #34d399; }
 .dark .action-icon { background: #374151; }
 .dark .action-icon.text-gray-700 { color: #e5e7eb; }
+.card-tap:active { transform: scale(.995); }

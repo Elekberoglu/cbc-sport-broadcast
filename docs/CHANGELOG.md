@@ -1,5 +1,41 @@
 # Dəyişikliklər
 
+## 2.1.0 — 01.11.2026
+- **Tamamlanma:** çəkiliş başlama vaxtı çatan kimi avtomatik "Tamamlananlar"a keçir (məs. 15:00-da). Başlama saatı yoxdursa yığışma/növbə saatı, heç bir saat yoxdursa günün sonu götürülür.
+- **Statistika:** "Ümumi çəkiliş" altında "X tamamlanıb · Y qarşıdadır"; ayın siyahısında tamamlananlar ✓, qarşıdakılar 🕐 ilə işarələnir.
+- **36 saatlıq həftəlik iş saatı** bölməsi həm STS, həm operator hissəsindən çıxarıldı.
+
+## 2.0.0 — 01.11.2026
+- **Çıxış:** Profil pəncərəsində "Çıxış" düyməsi (Bəli/Xeyr təsdiqi). Profil və cədvəl bu telefondan silinir, giriş ekranına (komanda seçimi) qayıdılır. Görünüş rejimi saxlanılır.
+- **Operator girişi:** əvvəlcə komanda seçilir; Operator üçün xana "Adınız" olur — ad operator cədvəlində yazıldığı kimi daxil edilir (məs. "Anar" və ya "Anar İs."). "Siz kimsiniz?" siyahısı çıxarıldı: cədvəl yüklənəndə girişdəki ad axtarılır; tapılmasa idxal edilmir və izah göstərilir.
+- Profil pəncərəsində ayrıca "Operator cədvəlində adınız" sahəsi çıxarıldı — operator üçün "Ad" sahəsi istifadə olunur.
+- Giriş xanasında telefonun avtomatik ad təklifi söndürüldü.
+- "Bütün Komanda"da "(Siz)" işarəsi operator adına dəqiq uyğunluqla qoyulur ("Anar" ≠ "Anar İs.").
+
+## 1.9.1 — 01.11.2026
+- "Bütün Komanda" operator rejimində: saat (09:00, 14:00) və növbə nişanı (Studiya / Kənar / STS-N / Növbətçi) göstərilir, say "növbə" kimi yazılır.
+- Operator komandası üçün redaktə və "Qrafik yarat" formalarında yalnız tarix və çəkilişin adı məcburidir; digər sahələr istəyə bağlıdır (qırmızı ulduz gizlədilir).
+- Məlumat doldurulmuş operator növbəsi STS heyətinin kartı ilə eyni görünüşdədir (Bakı/Ezamiyyət, hava, matç öncəsi/sonrası, iki saat qutusu) + növbə nişanı və komanda.
+
+## 1.9.0 — 01.11.2026
+- Operator növbə kartına **toxunanda** redaktə pəncərəsi açılır: çəkiliş yeri, yığışma və başlama saatı, yığışma qeydi (BOS), idman növü, yayım (Canlı/Videoyazı), matç öncəsi/sonrası əlavə etmək olar. Operator üçün yığışma saatı istəyə bağlıdır.
+- Məlumat əlavə edildikdən sonra kartda Bakı/Ezamiyyət nişanı, yayım növü, yer, flaş, başlama saatı və yerə görə hava proqnozu görünür.
+- Eyni həftənin operator cədvəli yenidən yüklənəndə əlavə edilmiş məlumatlar saxlanılır.
+- Redaktə formasına "Matç öncəsi / sonrası" sahəsi əlavə olundu.
+
+## 1.8.0 — 01.11.2026
+- **Komanda seçimi:** ilk girişdə "STS heyəti" və ya "Operator" seçilir (mütləq). Profil pəncərəsində "Komanda" ilə dəyişmək olar. Mövcud istifadəçilər avtomatik "STS heyəti" sayılır.
+- **STS heyəti:** yalnız çəkiliş qrafiki; operator cədvəli yüklənsə idxal edilmir, izah göstərilir.
+- **Operator:** yalnız operator cədvəli ("Həftəlik Növbə Cədvəli"); statistikada dairəvi qrafiklər, ezamiyyət və iş saatı gizlədilir — "Operator növbələri" və aylar üzrə saylar qalır. STS qrafiki yüklənsə idxal edilmir.
+- "Bütün Komanda" bölməsi də seçilmiş komandanın cədvəlini göstərir.
+
+## 1.7.0 — 01.11.2026
+- **Operatorlar cədvəli** dəstəklənir: `Tarix | STUDIYA | Şirkətdən kənar çəkilişlər | STS-1 | STS-2 | STS-3 | Növbətçi`. Eyni "Qrafik yüklə" düyməsi ilə yüklənir, format avtomatik tanınır (nümunə: `sablon/Operator-qrafiki-02.11-08.11.2026.xlsx`).
+- Adlar soyadsız yazıldığı üçün ilk yükləmədə "Bu cədvəldə siz kimsiniz?" siyahısı çıxır; seçim yadda qalır ("Anar" və "Anar İs." fərqli sayılır). Profil pəncərəsində "Operator cədvəlində adınız" sahəsindən dəyişmək olar.
+- Operator növbəsi kartı: növ nişanı (Studiya / Şirkətdən kənar / STS-N / Növbətçi), oyun və ya idman adı, komanda yoldaşları, növbə saatı; STS üçün yer bilinmədiyindən hava göstərilmir.
+- Çəkiliş qrafiki və operator qrafiki bir-birini əvəz etmir — ikisi də eyni vaxtda "Cədvəlim"də görünür, versiyalar ayrıca saxlanılır.
+- Statistikada "Operator növbələri" bölməsi; operator növbələri həftəlik iş saatına daxil edilmir.
+
 ## 1.6.1 — 31.10.2026
 - Qrafik təsdiqlənəndən sonra pəncərə avtomatik bağlanır; nəticə (versiya, çəkiliş sayı, dəyişikliklər) qısa bildirişlə göstərilir. Xəta və ya ad tapılmadıqda pəncərə açıq qalır.
 

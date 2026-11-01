@@ -3,16 +3,17 @@
 Yayım heyəti (rejissor, texniki direktor, təkrar operator, səs mühəndisi və s.) üçün həftəlik iş qrafiki tətbiqi. Bir kod bazası — **Android** və **iOS**. Veb hissə HTML + Tailwind + JS ilə yazılıb, Capacitor ilə yerli tətbiqə çevrilir.
 
 ## İmkanlar
+- **Operatorlar cədvəli** (Studiya / Şirkətdən kənar / STS-1..3 / Növbətçi) — eyni "Qrafik yüklə" ilə; ilk dəfə "siz kimsiniz?" siyahısından özünüzü seçirsiniz.
 - **İlk giriş:** istifadəçi Soyad Ad və Vəzifəni daxil edir; qrafik yüklənəndə yalnız öz çəkilişlərini görür. Adı qrafikdə tapılmasa, siyahıdan özünü seçir.
 - **Cədvəli təmizlə** (Ağıllı Xatırlatmanın altında, Bəli/Xeyr təsdiqi) və tarixçədən ayrı-ayrı yükləmələri silmək.
-- **Cədvəlim** — yalnız profil adınıza (Soyad Ad) uyğun çəkilişlər. Bitənlər avtomatik aşağıya düşür və "Tamamlandı" olur, növbəti çəkiliş "Növbəti" nişanı ilə yuxarıda görünür.
+- **Cədvəlim** — yalnız profil adınıza (Soyad Ad) uyğun çəkilişlər. Başlama vaxtı çatan kimi çəkiliş avtomatik aşağıya düşür və "Tamamlandı" olur, növbəti çəkiliş "Növbəti" nişanı ilə yuxarıda görünür.
 - Başlıqda **CBC SPORT BROADCAST** loqosu mərkəzdədir; ad və soyad bir sətirdə, kəsilmədən göstərilir.
 - Yığışma və başlama saatları ayrıca qutularda, yığışma qeydi ilə (məs. `BOS`); STS və matçönü+flaş məlumatı. Bütün saatlar 24 saat formatındadır.
 - Ezamiyyət (avtobus ikonu) və ya Bakı — yer sütununda region şəhəri yoxdursa, avtomatik **Bakı**.
 - **Avtomatik hava proqnozu** (Open-Meteo, açarsız): çəkiliş yerinə və tarixinə görə, **yığışma** və **başlama** saatları üçün ayrıca — temperatur, vəziyyət (yağış/qar/külək), yağıntı ehtimalı və miqdarı, külək sürəti və zərbəsi. Proqnoz yoxdursa (16 gündən uzaq, keçmiş tarix, internet yoxdur) bu açıq yazılır; hava heç vaxt əl ilə daxil edilmir və uydurulmur.
 - `⋮` menyusu: **Redaktə et** / **Sil**.
 - **Bütün Komanda** — ad, vəzifə və ya oyuna görə canlı axtarış.
-- **Statistika** — aylar üzrə çəkiliş sayları, seçilmiş ay üçün dairəvi qrafiklər (Bakı / Ezamiyyət, Canlı / Videoyazı), ezamiyyət günləri, **həftəlik iş saatı** (36 saatlıq normaya nisbətlə; yığışmadan oyunun sonuna qədər, idman növünün müddətinə görə).
+- **Statistika** — aylar üzrə çəkiliş sayları, seçilmiş ay üçün dairəvi qrafiklər (Bakı / Ezamiyyət, Canlı / Videoyazı), ezamiyyət günləri.
 - **Ağıllı xatırlatma** — yığışmadan 1 saat əvvəl telefona bildiriş.
 - **Görünüş rejimi** — Aydın / Qaranlıq / Sistem.
 

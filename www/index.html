@@ -89,7 +89,7 @@
             </div>
 
             <div class="flex justify-between items-center px-1">
-                <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Həftəlik Çəkiliş Cədvəli</h2>
+                <h2 id="list-title" class="text-sm font-bold text-gray-500 uppercase tracking-wider">Həftəlik Çəkiliş Cədvəli</h2>
             </div>
 
             <div id="schedule-list" class="space-y-3"></div>
@@ -132,7 +132,7 @@
         <!-- FOOTER -->
         <footer class="pt-6 pb-2 text-center border-t border-gray-200">
             <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
-            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v1.6.1</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v2.1</p>
         </footer>
     </main>
 
@@ -149,7 +149,7 @@
             </div>
 
             <!-- Dairəvi qrafiklər -->
-            <div class="grid grid-cols-2 gap-3">
+            <div id="stats-donuts" class="grid grid-cols-2 gap-3">
                 <figure class="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-center">
                     <figcaption class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Yer</figcaption>
                     <div id="donut-place" class="donut"></div>
@@ -165,32 +165,16 @@
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-blue-50 border border-blue-100 p-3 rounded-2xl text-center">
                     <p class="text-2xl font-black text-blue-900" id="stat-total">0</p>
-                    <p class="text-[11px] text-blue-700 font-medium"><i class="fa-solid fa-video mr-1"></i>Ümumi çəkiliş</p>
+                    <p class="text-[11px] text-blue-700 font-medium"><i class="fa-solid fa-video mr-1"></i><span id="stat-total-label">Ümumi çəkiliş</span></p>
+                    <p id="stat-split" class="text-[10px] text-blue-600 mt-0.5"></p>
                 </div>
-                <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-2xl text-center">
+                <div id="stats-ezam-tile" class="bg-emerald-50 border border-emerald-100 p-3 rounded-2xl text-center">
                     <p class="text-2xl font-black text-emerald-900" id="stat-ezam">0 gün</p>
                     <p class="text-[11px] text-emerald-700 font-medium"><i class="fa-solid fa-bus mr-1"></i>Ezamiyyət günləri</p>
                 </div>
             </div>
 
-            <!-- Həftəlik iş saatı -->
-            <div>
-                <div class="flex items-baseline justify-between mb-2">
-                    <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Həftəlik iş saatı</h4>
-                    <span class="text-[11px] text-gray-500">Norma: <strong id="norm-label" class="text-gray-900">36 saat</strong></span>
-                </div>
-                <div class="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-2xl p-3">
-                    <div id="hours-ring" class="w-28 shrink-0"></div>
-                    <div class="min-w-0 flex-1">
-                        <p id="week-label" class="text-xs font-bold text-gray-900"></p>
-                        <p id="week-hours" class="text-lg font-black text-gray-900 tabular-nums leading-tight mt-0.5"></p>
-                        <p id="week-status" class="text-[11px] font-semibold mt-1"></p>
-                        <p id="week-count" class="text-[11px] text-gray-500 mt-0.5"></p>
-                    </div>
-                </div>
-                <div id="week-rows" class="space-y-1 mt-2"></div>
-                <p id="month-hours" class="text-[11px] text-gray-500 mt-2 px-1"></p>
-            </div>
+            <div id="stat-op" class="hidden bg-indigo-50 border border-indigo-100 rounded-2xl p-3"></div>
 
             <!-- Aylar üzrə -->
             <div>
@@ -263,12 +247,19 @@
             </div>
             <p class="text-gray-500 leading-relaxed">Adınız qrafikdə necə yazılıbsa, elə daxil edin. "Cədvəlim" bölməsi bu ada görə süzülür.</p>
             <div>
-                <label for="pf-name" class="font-medium text-gray-700 block mb-1">Soyad Ad</label>
+                <label for="pf-name" id="pf-name-label" class="font-medium text-gray-700 block mb-1">Soyad Ad</label>
                 <input id="pf-name" required autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
             </div>
             <div>
                 <label for="pf-role" class="font-medium text-gray-700 block mb-1">Vəzifə</label>
                 <input id="pf-role" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+            </div>
+            <div>
+                <span class="font-medium text-gray-700 block mb-1">Komanda</span>
+                <div id="pf-team" class="grid grid-cols-2 gap-1 bg-gray-100 p-1 rounded-xl text-xs font-semibold">
+                    <button type="button" data-team="sts" class="py-2 rounded-lg"><i class="fa-solid fa-tower-broadcast mr-1"></i>STS heyəti</button>
+                    <button type="button" data-team="operator" class="py-2 rounded-lg"><i class="fa-solid fa-video mr-1"></i>Operator</button>
+                </div>
             </div>
             <div>
                 <span class="font-medium text-gray-700 block mb-1">Görünüş rejimi</span>
@@ -280,6 +271,7 @@
             </div>
             <button type="button" id="remove-avatar" class="text-red-600 font-semibold"><i class="fa-solid fa-trash-can mr-1"></i>Profil şəklini sil</button>
             <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow active:bg-blue-700">Yadda Saxla</button>
+            <button type="button" id="logout" class="w-full border border-red-200 bg-red-50 text-red-600 font-bold py-2.5 rounded-xl active:bg-red-100"><i class="fa-solid fa-right-from-bracket mr-1"></i>Çıxış</button>
         </form>
     </div>
 
@@ -292,6 +284,7 @@
             </div>
             <form id="edit-form" class="space-y-3 text-xs" novalidate>
                 <input type="hidden" id="f-id">
+                <div id="f-opinfo" class="hidden bg-indigo-50 border border-indigo-100 text-indigo-800 rounded-xl p-2.5 text-[11px]"></div>
                 <div>
                     <label for="f-date" class="font-medium text-gray-700 block mb-1">Tarix <span class="text-red-500">*</span></label>
                     <button type="button" id="f-date" data-date="" class="w-full border border-gray-200 rounded-xl p-2 bg-gray-50 flex items-center gap-3 text-left active:bg-gray-100">
@@ -339,6 +332,10 @@
                     <label for="f-venue" class="font-medium text-gray-700 block mb-1">Çəkiliş yeri (boş qalsa Bakı sayılır)</label>
                     <input id="f-venue" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
                     <p class="text-[10px] text-gray-400 mt-1"><i class="fa-solid fa-cloud-sun mr-1"></i>Hava proqnozu bu yerə və tarixə görə avtomatik göstəriləcək.</p>
+                </div>
+                <div>
+                    <label for="f-flash" class="font-medium text-gray-700 block mb-1">Matç öncəsi / sonrası <span class="text-gray-400 font-normal">(istəyə bağlı)</span></label>
+                    <input id="f-flash" autocomplete="off" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -423,15 +420,31 @@
             </div>
             <form id="onboard-form" class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4 text-xs" novalidate>
                 <div>
-                    <label for="ob-name" class="font-medium text-gray-700 block mb-1">Soyad Ad <span class="text-red-500">*</span></label>
-                    <input id="ob-name" autocomplete="name" class="w-full border border-gray-200 rounded-xl p-3 bg-gray-50 text-base">
-                    <p class="text-[11px] text-gray-400 mt-1">Qrafikdə necə yazılıbsa, elə yazın (məs: Məmmədov İlham).</p>
+                    <span class="font-medium text-gray-700 block mb-1.5">Komandanız <span class="text-red-500">*</span></span>
+                    <div class="grid grid-cols-2 gap-2" id="ob-team">
+                        <button type="button" data-team="sts" class="team-opt rounded-xl border-2 border-gray-200 bg-gray-50 p-3 text-center">
+                            <i class="fa-solid fa-tower-broadcast text-lg text-blue-600"></i>
+                            <span class="block font-bold text-sm text-gray-900 mt-1">STS heyəti</span>
+                            <span class="block text-[10px] text-gray-500 leading-snug mt-0.5">Çəkiliş qrafiki</span>
+                        </button>
+                        <button type="button" data-team="operator" class="team-opt rounded-xl border-2 border-gray-200 bg-gray-50 p-3 text-center">
+                            <i class="fa-solid fa-video text-lg text-indigo-600"></i>
+                            <span class="block font-bold text-sm text-gray-900 mt-1">Operator</span>
+                            <span class="block text-[10px] text-gray-500 leading-snug mt-0.5">Studiya, STS, növbətçi</span>
+                        </button>
+                    </div>
+                    <p id="ob-team-err" class="hidden text-[11px] text-red-600 mt-1">Komandanızı seçin.</p>
+                </div>
+                <div>
+                    <label for="ob-name" class="font-medium text-gray-700 block mb-1"><span id="ob-name-label">Soyad Ad</span> <span class="text-red-500">*</span></label>
+                    <input id="ob-name" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" class="w-full border border-gray-200 rounded-xl p-3 bg-gray-50 text-base">
+                    <p id="ob-name-hint" class="text-[11px] text-gray-400 mt-1">Qrafikdə necə yazılıbsa, elə yazın (məs: Məmmədov İlham).</p>
                     <p id="ob-err" class="hidden text-[11px] text-red-600 mt-1"></p>
                 </div>
                 <button type="submit" class="w-full bg-blue-600 text-white text-sm font-bold py-3.5 rounded-xl shadow active:bg-blue-700">Davam et <i class="fa-solid fa-arrow-right ml-1"></i></button>
             </form>
             <ol class="text-xs text-gray-500 mt-6 space-y-2 px-1">
-                <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">1</span>Adınızı və soyadınızı yazın</li>
+                <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">1</span>Komandanızı seçin və adınızı yazın</li>
                 <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">2</span><strong>Qrafik yüklə</strong> ilə həftəlik Excel qrafikini seçin</li>
                 <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">3</span>Yalnız öz çəkilişlərinizi görəcəksiniz</li>
             </ol>
@@ -444,6 +457,7 @@
     <script src="js/data.js"></script>
     <script src="js/xlsx-reader.js"></script>
     <script src="js/parser.js"></script>
+    <script src="js/operators.js"></script>
     <script src="js/weather.js"></script>
     <script src="js/notify.js"></script>
     <script src="js/timepicker.js"></script>

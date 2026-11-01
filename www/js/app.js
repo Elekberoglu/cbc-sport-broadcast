@@ -4,7 +4,6 @@
     const C = g.CBC;
     const $ = id => document.getElementById(id);
     const STORE = 'cbc_sport_broadcast_v1';
-    const SHOOT_DURATION_H = 3;   // başlamadan sonra neçə saata "Tamamlandı" sayılır
     const HISTORY_MAX = 20;       // saxlanılan qrafik versiyalarının sayı
 
     // ---------- Vəziyyət ----------
@@ -15,15 +14,14 @@
 
     function defaultState() {
         return {
-            profile: { name: '', role: '', avatar: null },
+            profile: { name: '', role: '', avatar: null, team: '' },
             shoots: [],
             people: {},
             archive: [],
             history: [],
             meta: { version: 0, uploadedAt: null, fileName: null, image: null },
             notify: { enabled: false },
-            theme: 'system',
-            work: { norm: 36, durations: { Futbol: 2, Basketbol: 2, Voleybol: 2, Futzal: 1.5, 'Həndbol': 1.5, 'Digər': 2 } }
+            theme: 'system'
         };
     }
     function load() {
@@ -38,7 +36,8 @@
             s.shoots = []; s.people = {}; s.meta = defaultState().meta;
         }
         s.history = s.history || [];
-        s.work = defaultState().work; // sabit qaydalar (ayarlar paneli çıxarılıb)
+        if (s.profile && s.profile.name && !s.profile.team) s.profile.team = 'sts'; // köhnə istifadəçilər
+        delete s.work;
         return s;
     }
     function save() {
@@ -78,22 +77,36 @@
     function fileSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
     function isImageFile(f) { return /^image\//.test(f.type) || /\.(png|jpe?g|heic|webp)$/i.test(f.name || ''); }
 
+    function team() { return state.profile.team === 'operator' ? 'operator' : 'sts'; }
+    function opName() { return state.profile.opAlias || (team() === 'operator' ? state.profile.name : ''); }
     function isMine(s) {
-        if (s.manual || s.mine) return true;
+        if (s.manual) return true;
+        const isOp = s.source === 'operator';
+        if (team() === 'operator' ? !isOp : isOp) return false; // hər komanda yalnız öz cədvəl növünü görür
+        if (s.mine) return true;
+        if (s.source === 'operator') return !!opName() && (s.crew || []).some(n => C.opSameName(n, opName()));
         return (s.crew || []).some(n => C.nameMatch(n, state.profile.name));
     }
+    const OP_ICON = { studio: 'fa-building', outside: 'fa-van-shuttle', sts: 'fa-satellite-dish', duty: 'fa-user-shield' };
     function myShoots() { return state.shoots.filter(isMine); }
 
     function status(s) {
-        const st = C.dateTime(s.date, s.start || '23:59');
-        if (!st) return 'active';
-        const end = s.start ? st.getTime() + SHOOT_DURATION_H * 3600e3 : st.getTime();
-        return Date.now() > end ? 'completed' : 'active';
+        // Başlama vaxtı çatan kimi "Tamamlandı": başlama saatı → yoxdursa yığışma/növbə saatı → yoxdursa günün sonu
+        const t = C.dateTime(s.date, s.start || s.gather || '23:59');
+        if (!t) return 'active';
+        return Date.now() >= t.getTime() ? 'completed' : 'active';
     }
     function sortKey(s) { const d = C.dateTime(s.date, s.start || s.gather || '23:59'); return d ? d.getTime() : 0; }
 
     // ---------- Profil ----------
+    function applyTeamUI() {
+        const op = team() === 'operator';
+        $('list-title').textContent = op ? 'Həftəlik Növbə Cədvəli' : 'Həftəlik Çəkiliş Cədvəli';
+        $('pf-name-label').textContent = op ? 'Ad (operator cədvəlindəki kimi)' : 'Soyad Ad';
+        setTeamButtons('#pf-team', team());
+    }
     function renderProfile() {
+        applyTeamUI();
         $('profile-name').textContent = state.profile.name || 'Adınızı daxil edin';
         $('clear-all').classList.toggle('hidden', !state.shoots.length);
         fitName();
@@ -136,7 +149,11 @@
 
     // ---------- Cədvəlim ----------
     function cardHTML(item, opts) {
+        const op = item.source === 'operator';
+        if (op && !item.detailed) return opCardHTML(item, opts);
         const trip = C.isTrip(item.venue);
+        const opBadge = op ? '<span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid ' + (OP_ICON[item.kind] || 'fa-video') + ' mr-1"></i>' + C.esc(item.opLabel || 'Operator') + '</span>' : '';
+        const opTeam = op ? (item.crew || []).filter(n => !C.opSameName(n, opName())) : [];
         const city = C.detectCity(item.venue).name;
         const done = status(item) === 'completed';
         const today = item.date === C.todayISO();
@@ -151,11 +168,11 @@
             : (opts.next ? '<span class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full">Növbəti</span>' : (today ? '<span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">Bu gün</span>' : ''));
 
         return '' +
-        '<div class="bg-white rounded-2xl p-4 border transition relative ' + (done ? 'opacity-60 bg-gray-50 border-gray-200' : (opts.next ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 shadow-sm')) + '">' +
+        '<div' + (op ? ' data-card="' + item.id + '"' : '') + ' class="' + (op ? 'card-tap cursor-pointer ' : '') + 'bg-white rounded-2xl p-4 border transition relative ' + (done ? 'opacity-60 bg-gray-50 border-gray-200' : (opts.next ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 shadow-sm')) + '">' +
             '<div class="flex justify-between items-start mb-2 gap-2">' +
                 '<div class="flex items-center flex-wrap gap-1.5 min-w-0">' +
                     '<span class="text-xs font-bold text-gray-500 whitespace-nowrap"><i class="fa-regular fa-calendar mr-1"></i>' + C.esc(C.fmtDate(item.date)) + ', ' + C.esc(C.weekday(item.date)) + '</span>' +
-                    locationBadge + stateBadge +
+                    opBadge + locationBadge + stateBadge +
                 '</div>' +
                 '<div class="relative shrink-0">' +
                     '<button data-menu="' + item.id + '" class="text-gray-400 w-8 h-8 -mr-2 -mt-1 flex items-center justify-center" aria-label="Menyu"><i class="fa-solid fa-ellipsis-vertical"></i></button>' +
@@ -173,7 +190,8 @@
                 broadcastBadge +
             '</div>' +
             (item.venue ? '<p class="text-[11px] text-gray-500 -mt-1 mb-1"><i class="fa-solid fa-location-dot mr-1 text-gray-400"></i>' + C.esc(item.venue) + '</p>' : '') +
-            (item.sts ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-truck mr-1 text-gray-400"></i>STS: <span class="font-semibold text-gray-700">' + C.esc(item.sts) + '</span></p>' : '') +
+            (item.sts && !op ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-truck mr-1 text-gray-400"></i>STS: <span class="font-semibold text-gray-700">' + C.esc(item.sts) + '</span></p>' : '') +
+            (opTeam.length || (op && item.extra) ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-users mr-1 text-gray-400"></i>Komanda: <span class="text-gray-700">' + C.esc(opTeam.join(', ')) + (item.extra ? ' +' + item.extra : '') + '</span></p>' : '') +
             '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-bolt mr-1 ' + (item.flash ? 'text-amber-500' : 'text-gray-300') + '"></i>Matç öncəsi/sonrası: ' +
                 (item.flash ? '<span class="font-semibold text-gray-700">' + C.esc(item.flash) + '</span>' : '<span class="text-gray-400">yoxdur</span>') + '</p>' +
             '<div class="weather text-xs text-sky-700 bg-sky-50 px-2.5 py-2 rounded-xl my-2 border border-sky-100 font-medium" data-wx="' + item.id + '">' + weatherHTML(item) + '</div>' +
@@ -188,6 +206,58 @@
                     '<span class="text-base font-black text-gray-900">' + C.esc(item.start || '—') + '</span>' +
                 '</div>' +
             '</div>' +
+        '</div>';
+    }
+
+    function menuHTML(item) {
+        return '<div class="relative shrink-0">' +
+            '<button data-menu="' + item.id + '" class="text-gray-400 w-8 h-8 -mr-2 -mt-1 flex items-center justify-center" aria-label="Menyu"><i class="fa-solid fa-ellipsis-vertical"></i></button>' +
+            '<div id="menu-' + item.id + '" class="menu hidden absolute right-0 top-7 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-1 w-32 text-xs">' +
+                '<button data-edit="' + item.id + '" class="w-full text-left px-3 py-2 text-gray-700 flex items-center"><i class="fa-solid fa-pen-to-square mr-2 text-blue-500"></i> Redaktə et</button>' +
+                '<button data-del="' + item.id + '" class="w-full text-left px-3 py-2 text-red-600 flex items-center"><i class="fa-solid fa-trash-can mr-2"></i> Sil</button>' +
+            '</div></div>';
+    }
+    /** Operator növbəsi kartı: Studiya / Şirkətdən kənar / STS-N / Növbətçi (+ istifadəçinin əlavə etdiyi məlumatlar) */
+    function opCardHTML(item, opts) {
+        const done = status(item) === 'completed';
+        const today = item.date === C.todayISO();
+        const kindBadge = '<span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid ' + (OP_ICON[item.kind] || 'fa-video') + ' mr-1"></i>' + C.esc(item.opLabel || 'Operator') + '</span>';
+        const trip = item.venue && C.isTrip(item.venue);
+        const locBadge = !item.venue ? '' : (trip
+            ? '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-bus mr-1"></i>Ezamiyyət: ' + C.esc(C.detectCity(item.venue).name) + '</span>'
+            : '<span class="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-building mr-1"></i>Bakı</span>');
+        const stateBadge = done
+            ? '<span class="text-[10px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check mr-1"></i>Tamamlandı</span>'
+            : (opts.next ? '<span class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full">Növbəti</span>' : (today ? '<span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">Bu gün</span>' : ''));
+        const typeBadge = item.detailed ? (item.type === 'yazı'
+            ? '<span class="bg-gray-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm shrink-0">YAZI</span>'
+            : '<span class="bg-red-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm shrink-0">CANLI</span>') : '';
+        const team = (item.crew || []).filter(n => !C.opSameName(n, opName()));
+        const icon = item.kind === 'sts' || item.detailed ? C.sportIcon(item.sport) : (OP_ICON[item.kind] + ' text-indigo-600');
+        const showWx = item.venue || (item.kind !== 'sts' && item.gather);
+        const timeBoxes = item.start
+            ? '<div class="grid grid-cols-2 gap-3">' +
+                '<div class="bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 text-center"><span class="text-[10px] text-blue-600 uppercase font-bold tracking-wide block mb-0.5">' + (item.kind === 'sts' ? 'Yığışma Saatı' : 'Növbə saatı') + '</span><span class="text-base font-black text-blue-900">' + C.esc(item.gather || '—') + '</span>' +
+                    (item.gatherNote ? ' <span class="text-[10px] font-black text-blue-700 bg-blue-100 rounded px-1 align-middle">' + C.esc(item.gatherNote) + '</span>' : '') + '</div>' +
+                '<div class="bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-center"><span class="text-[10px] text-gray-500 uppercase font-bold tracking-wide block mb-0.5">Başlama Saatı</span><span class="text-base font-black text-gray-900">' + C.esc(item.start) + '</span></div>' +
+              '</div>'
+            : '<div class="bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 text-center"><span class="text-[10px] text-blue-600 uppercase font-bold tracking-wide block mb-0.5">' + (item.kind === 'sts' ? 'Yığışma Saatı' : 'Növbə saatı') + '</span>' +
+                '<span class="text-base font-black text-blue-900">' + C.esc(item.gather || 'Göstərilməyib') + '</span>' +
+                (item.gatherNote ? ' <span class="text-[10px] font-black text-blue-700 bg-blue-100 rounded px-1 align-middle">' + C.esc(item.gatherNote) + '</span>' : '') + '</div>';
+        return '<div data-card="' + item.id + '" class="card-tap cursor-pointer bg-white rounded-2xl p-4 border transition relative ' + (done ? 'opacity-60 bg-gray-50 border-gray-200' : (opts.next ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 shadow-sm')) + '">' +
+            '<div class="flex justify-between items-start mb-2 gap-2">' +
+                '<div class="flex items-center flex-wrap gap-1.5 min-w-0">' +
+                    '<span class="text-xs font-bold text-gray-500 whitespace-nowrap"><i class="fa-regular fa-calendar mr-1"></i>' + C.esc(C.fmtDate(item.date)) + ', ' + C.esc(C.weekday(item.date)) + '</span>' +
+                    kindBadge + locBadge + stateBadge +
+                '</div>' + menuHTML(item) +
+            '</div>' +
+            '<div class="flex items-center justify-between my-2 gap-2"><div class="flex items-center gap-2 min-w-0"><i class="fa-solid ' + icon + ' text-base"></i><h3 class="font-bold text-sm text-gray-900 leading-snug">' + C.esc(item.match) + '</h3></div>' + typeBadge + '</div>' +
+            (item.venue ? '<p class="text-[11px] text-gray-500 -mt-1 mb-1"><i class="fa-solid fa-location-dot mr-1 text-gray-400"></i>' + C.esc(item.venue) + '</p>' : '') +
+            (team.length || item.extra ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-users mr-1 text-gray-400"></i>Komanda: <span class="text-gray-700">' + C.esc(team.join(', ')) + (item.extra ? ' +' + item.extra : '') + '</span></p>' : '') +
+            (item.flash ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-bolt mr-1 text-amber-500"></i>Matç öncəsi/sonrası: <span class="font-semibold text-gray-700">' + C.esc(item.flash) + '</span></p>' : '') +
+            (showWx ? '<div class="weather text-xs text-sky-700 bg-sky-50 px-2.5 py-2 rounded-xl my-2 border border-sky-100 font-medium" data-wx="' + item.id + '">' + weatherHTML(item) + '</div>' : '') +
+            '<div class="mt-3 pt-2 border-t border-gray-100">' + timeBoxes + '</div>' +
+            (!item.detailed && !done ? '<p class="text-[10px] text-indigo-500 text-center mt-2"><i class="fa-solid fa-hand-pointer mr-1"></i>Toxunun — yer, saat və digər məlumatları əlavə edin</p>' : '') +
         '</div>';
     }
 
@@ -222,7 +292,7 @@
         return '<div class="flex items-center justify-between mb-1.5"><span class="text-[10px] font-bold uppercase tracking-wide text-sky-600"><i class="fa-solid fa-cloud-sun mr-1"></i>Hava proqnozu · ' + C.esc(w.city) + '</span></div>' +
             '<div class="space-y-1.5">' +
                 (w.day ? wxRow('Gün ərzində', w.day) : '') +
-                (item.gather ? wxRow('Yığışma', w.gather) : '') +
+                (item.gather ? wxRow(item.source === 'operator' && item.kind !== 'sts' ? 'Növbə' : 'Yığışma', w.gather) : '') +
                 (item.start ? wxRow('Başlama', w.start) : '') +
             '</div>';
     }
@@ -230,6 +300,7 @@
     function loadWeather(items) {
         items.forEach(item => {
             if (weatherCache[item.id] !== undefined) return;
+            if (item.source === 'operator' && !item.detailed && !item.venue && (item.kind === 'sts' || !item.gather)) return; // yeri bilinmir
             C.weatherForShoot(item).then(w => { weatherCache[item.id] = w; }).catch(() => { weatherCache[item.id] = 'error'; }).then(() => {
                 const el = document.querySelector('[data-wx="' + item.id + '"]');
                 if (el) el.innerHTML = weatherHTML(item);
@@ -265,7 +336,7 @@
         const q = C.norm($('team-search').value);
         const list = $('team-list');
         const map = {};
-        state.shoots.forEach(s => (s.crew || []).forEach(n => {
+        state.shoots.filter(s => (s.source === 'operator') === (team() === 'operator')).forEach(s => (s.crew || []).forEach(n => {
             const key = Object.keys(map).find(k => C.nameMatch(k, n) && C.norm(k).split(' ').length === C.norm(n).split(' ').length) || n;
             (map[key] = map[key] || []).push(s);
         }));
@@ -285,21 +356,26 @@
         list.innerHTML = names.map(n => {
             const role = state.people[n] || '';
             const items = map[n].slice().sort((a, b) => sortKey(a) - sortKey(b));
-            const me = C.nameMatch(n, state.profile.name);
+            const me = team() === 'operator' ? C.opSameName(n, opName()) : C.nameMatch(n, state.profile.name);
             return '<div class="bg-white p-3.5 rounded-2xl border ' + (me ? 'border-blue-200' : 'border-gray-100') + ' shadow-sm text-xs">' +
                 '<div class="flex items-center gap-2.5 mb-2">' +
                     '<div class="w-8 h-8 rounded-full ' + (me ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600') + ' font-bold flex items-center justify-center text-[11px] shrink-0">' + C.esc(C.initials(n)) + '</div>' +
                     '<div class="min-w-0"><h4 class="font-bold text-gray-900 truncate">' + C.esc(n) + (me ? ' <span class="text-[9px] text-blue-600">(Siz)</span>' : '') + '</h4>' +
                     (role ? '<p class="text-[10px] text-blue-600 font-semibold">' + C.esc(role) + '</p>' : '') + '</div>' +
-                    '<span class="ml-auto text-[10px] font-bold text-gray-400 shrink-0">' + items.length + ' çəkiliş</span>' +
+                    '<span class="ml-auto text-[10px] font-bold text-gray-400 shrink-0">' + items.length + (team() === 'operator' ? ' növbə' : ' çəkiliş') + '</span>' +
                 '</div>' +
                 '<div class="space-y-1.5">' + items.map(s => {
                     const trip = C.isTrip(s.venue);
                     const city = C.detectCity(s.venue).name;
                     const done = status(s) === 'completed';
+                    const op = s.source === 'operator';
+                    const time = s.start || s.gather;
+                    const badge = op && !s.venue
+                        ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 bg-indigo-100 text-indigo-800"><i class="fa-solid ' + (OP_ICON[s.kind] || 'fa-video') + ' mr-1"></i>' + C.esc(s.kind === 'outside' ? 'Kənar' : s.opLabel) + '</span>'
+                        : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ' + (trip ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700') + '">' + (trip ? '<i class="fa-solid fa-bus mr-1"></i>' : '') + C.esc(city) + '</span>';
                     return '<div class="flex items-center justify-between gap-2 ' + (done ? 'opacity-50' : '') + '">' +
-                        '<p class="text-gray-600 min-w-0 truncate"><i class="fa-regular fa-calendar mr-1 text-gray-400"></i>' + C.esc(C.fmtDate(s.date)) + ' · ' + C.esc(s.start || '') + ' — <span class="font-semibold text-gray-800">' + C.esc(s.match) + '</span></p>' +
-                        '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ' + (trip ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700') + '">' + (trip ? '<i class="fa-solid fa-bus mr-1"></i>' : '') + C.esc(city) + '</span>' +
+                        '<p class="text-gray-600 min-w-0 truncate"><i class="fa-regular fa-calendar mr-1 text-gray-400"></i>' + C.esc(C.fmtDate(s.date)) + (time ? ' · ' + C.esc(time) : '') + ' — <span class="font-semibold text-gray-800">' + C.esc(s.match) + '</span></p>' +
+                        badge +
                     '</div>';
                 }).join('') + '</div>' +
             '</div>';
@@ -389,102 +465,40 @@
                 '<span class="w-6 text-right text-[11px] font-bold text-gray-900 tabular-nums">' + counts[k] + '</span></button>';
         }).join('');
     }
-    // ---------- İş saatı ----------
-    function mins(hhmm) { const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || ''); return m ? +m[1] * 60 + +m[2] : null; }
-    /** Bir çəkilişin iş vaxtı (dəqiqə): yığışmadan oyunun sonuna (başlama + idman müddəti) */
-    function shootMinutes(s) {
-        const dur = Math.round((state.work.durations[s.sport] != null ? state.work.durations[s.sport] : state.work.durations['Digər']) * 60);
-        const g = mins(s.gather), st = mins(s.start);
-        if (g != null && st != null) {
-            const start = st < g ? st + 1440 : st; // gecəyarısını keçirsə
-            return { m: start + dur - g, est: false };
-        }
-        return { m: dur, est: true }; // saatlar yoxdursa — yalnız oyun müddəti (təxmini)
-    }
-    function fmtH(m) { const h = Math.floor(m / 60), r = Math.round(m % 60); return h + ' saat' + (r ? ' ' + r + ' dəq' : ''); }
-    function fmtHs(m) { const h = Math.floor(m / 60), r = Math.round(m % 60); return h + 's' + (r ? ' ' + C.pad(r) + 'd' : ''); }
-    function weekStart(iso) { const d = C.parseISO(iso); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return C.isoDate(d); }
-    function weekLabel(ws) {
-        const a = C.parseISO(ws), b = new Date(a); b.setDate(b.getDate() + 6);
-        return C.pad(a.getDate()) + ' ' + C.MONTHS[a.getMonth()].slice(0, 3) + ' – ' + C.pad(b.getDate()) + ' ' + C.MONTHS[b.getMonth()].slice(0, 3);
-    }
-    let selectedWeek = null;
-    function weeksFor(monthKey) {
-        const w = {};
-        allMine().forEach(s => {
-            const ws = weekStart(s.date);
-            const we = new Date(C.parseISO(ws)); we.setDate(we.getDate() + 6);
-            if (C.monthKey(ws) !== monthKey && C.monthKey(C.isoDate(we)) !== monthKey) return;
-            const r = shootMinutes(s);
-            const o = w[ws] = w[ws] || { m: 0, n: 0, est: 0 };
-            o.m += r.m; o.n++; if (r.est) o.est++;
-        });
-        const tw = weekStart(C.todayISO());
-        if (C.monthKey(tw) === monthKey && !w[tw]) w[tw] = { m: 0, n: 0, est: 0 };
-        return w;
-    }
-    function ring(el, value, max, over) {
-        const pal = palette();
-        const R = 44, SW = 12, CIRC = 2 * Math.PI * R, frac = Math.min(1, value / max);
-        el.innerHTML = '<svg viewBox="0 0 120 120" class="w-full block" role="img" aria-label="' + Math.round(value / max * 100) + '% norma">' +
-            '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + pal.empty + '" stroke-width="' + SW + '"/>' +
-            (frac > 0 ? '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + (over ? pal.warn : pal.bar) + '" stroke-width="' + SW + '" stroke-linecap="round" stroke-dasharray="' + (frac * CIRC) + ' ' + CIRC + '" transform="rotate(-90 60 60)"/>' : '') +
-            '<text x="60" y="60" text-anchor="middle" class="donut-num" style="font-size:22px">' + Math.round(value / max * 100) + '%</text>' +
-            '<text x="60" y="76" text-anchor="middle" class="donut-lbl">normadan</text></svg>';
-    }
-    function renderWeeks(monthKey) {
-        const norm = state.work.norm * 60;
-        const weeks = weeksFor(monthKey);
-        const keys = Object.keys(weeks).sort();
-        if (!keys.length) {
-            $('hours-ring').innerHTML = ''; ring($('hours-ring'), 0, norm, false);
-            $('week-label').textContent = 'Bu ayda çəkiliş yoxdur';
-            $('week-hours').textContent = '0 saat'; $('week-status').textContent = ''; $('week-count').textContent = '';
-            $('week-rows').innerHTML = ''; $('month-hours').textContent = '';
-            return;
-        }
-        if (!selectedWeek || !weeks[selectedWeek]) {
-            const tw = weekStart(C.todayISO());
-            selectedWeek = weeks[tw] ? tw : keys[keys.length - 1];
-        }
-        const w = weeks[selectedWeek], over = w.m > norm;
-        ring($('hours-ring'), w.m, norm, over);
-        $('week-label').textContent = weekLabel(selectedWeek) + (selectedWeek === weekStart(C.todayISO()) ? ' · bu həftə' : '');
-        $('week-hours').textContent = fmtH(w.m) + ' / ' + state.work.norm + ' saat';
-        const st = $('week-status');
-        if (over) { st.className = 'text-[11px] font-semibold mt-1 text-amber-700'; st.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i>Normadan ' + fmtH(w.m - norm) + ' artıq'; }
-        else if (w.m === norm) { st.className = 'text-[11px] font-semibold mt-1 text-emerald-700'; st.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>Norma tam doldu'; }
-        else { st.className = 'text-[11px] font-semibold mt-1 text-gray-600'; st.innerHTML = '<i class="fa-regular fa-clock mr-1"></i>Normaya ' + fmtH(norm - w.m) + ' qalıb'; }
-        $('week-count').textContent = w.n + ' çəkiliş' + (w.est ? ' · ' + w.est + ' çəkilişin saatı yoxdur (təxmini)' : '');
-        const pal = palette(), max = Math.max(norm, ...keys.map(k => weeks[k].m));
-        $('week-rows').innerHTML = keys.map(k => {
-            const o = weeks[k], on = k === selectedWeek, ov = o.m > norm;
-            return '<button data-week="' + k + '" class="w-full flex items-center gap-2 text-left rounded-lg px-1.5 py-1 ' + (on ? 'bg-blue-50' : '') + '" aria-pressed="' + on + '">' +
-                '<span class="w-[5.5rem] shrink-0 whitespace-nowrap text-[11px] ' + (on ? 'font-bold text-gray-900' : 'text-gray-600') + '">' + weekLabel(k) + '</span>' +
-                '<span class="relative flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">' +
-                    '<span class="block h-full rounded-full" style="width:' + (o.m / max * 100) + '%;background:' + (ov ? pal.warn : pal.bar) + ';opacity:' + (on ? 1 : .45) + '"></span>' +
-                    '<span class="absolute top-0 bottom-0 w-0.5 bg-gray-500" style="left:' + (norm / max * 100) + '%" title="Norma"></span></span>' +
-                '<span class="w-[4.75rem] shrink-0 whitespace-nowrap text-right text-[11px] font-bold tabular-nums ' + (ov ? 'text-amber-700' : 'text-gray-900') + '">' + (ov ? '⚠ ' : '') + fmtHs(o.m) + '</span></button>';
-        }).join('');
-        const monthM = allMine().filter(s => C.monthKey(s.date) === monthKey).reduce((a, s) => a + shootMinutes(s).m, 0);
-        $('month-hours').innerHTML = 'Ay üzrə cəmi: <strong class="text-gray-900">' + fmtH(monthM) + '</strong> · boz xətt — həftəlik norma';
-    }
     function updateStats() {
         const key = $('stats-month').value;
         const pal = palette();
         const items = allMine().filter(s => C.monthKey(s.date) === key);
-        const trips = items.filter(s => C.isTrip(s.venue));
-        const rec = items.filter(s => s.type === 'yazı').length;
+        const bc = items.filter(s => s.source !== 'operator');
+        const ops = items.filter(s => s.source === 'operator');
+        const trips = bc.filter(s => C.isTrip(s.venue));
+        const rec = bc.filter(s => s.type === 'yazı').length;
         $('stat-total').textContent = items.length;
+        const doneN = items.filter(x => status(x) === 'completed').length;
+        $('stat-split').textContent = doneN + ' tamamlanıb · ' + (items.length - doneN) + ' qarşıdadır';
         $('stat-ezam').textContent = new Set(trips.map(s => s.date)).size + ' gün';
-        const place = [{ label: 'Bakı daxili', value: items.length - trips.length, color: pal.baku }, { label: 'Ezamiyyət', value: trips.length, color: pal.trip }];
-        const type = [{ label: 'Canlı', value: items.length - rec, color: pal.live }, { label: 'Videoyazı', value: rec, color: pal.rec }];
+        const place = [{ label: 'Bakı daxili', value: bc.length - trips.length, color: pal.baku }, { label: 'Ezamiyyət', value: trips.length, color: pal.trip }];
+        const type = [{ label: 'Canlı', value: bc.length - rec, color: pal.live }, { label: 'Videoyazı', value: rec, color: pal.rec }];
+        const opMode = team() === 'operator';
+        $('stats-donuts').classList.toggle('hidden', opMode);
+        $('stats-ezam-tile').classList.toggle('hidden', opMode);
+        $('stat-total-label').textContent = opMode ? 'Ümumi növbə' : 'Ümumi çəkiliş';
+        const opEl = $('stat-op');
+        if (ops.length) {
+            const c = k => ops.filter(s => s.kind === k).length;
+            opEl.classList.remove('hidden');
+            opEl.innerHTML = '<p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wide mb-1.5"><i class="fa-solid fa-video mr-1"></i>Operator növbələri: ' + ops.length + '</p>' +
+                '<div class="grid grid-cols-4 gap-1.5 text-center">' + [['studio', 'Studiya'], ['outside', 'Kənar'], ['sts', 'STS'], ['duty', 'Növbətçi']].map(([k, l]) =>
+                    '<div class="bg-white rounded-lg py-1.5 border border-indigo-100"><p class="text-base font-black text-gray-900">' + c(k) + '</p><p class="text-[10px] text-gray-500">' + l + '</p></div>').join('') + '</div>';
+        } else opEl.classList.add('hidden');
         donut($('donut-place'), place, 'çəkiliş'); legend($('legend-place'), place);
         donut($('donut-type'), type, 'yayım'); legend($('legend-type'), type);
         monthBars();
-        renderWeeks(key);
-        $('stat-list').innerHTML = items.length ? items.sort((a, b) => sortKey(a) - sortKey(b)).map(s => { const r = shootMinutes(s); return (
-            '<div class="flex justify-between text-[11px] text-gray-600 px-1 gap-2"><span class="truncate">' + C.esc(C.fmtDate(s.date)) + ' — ' + C.esc(s.match) + '</span><span class="shrink-0 flex gap-2"><span class="tabular-nums text-gray-900 font-semibold">' + (r.est ? '~' : '') + fmtHs(r.m) + '</span><span class="' + (C.isTrip(s.venue) ? 'text-emerald-700' : 'text-gray-400') + '">' + C.esc(C.detectCity(s.venue).name) + '</span></span></div>'); }
+        $('stat-list').innerHTML = items.length ? items.sort((a, b) => sortKey(a) - sortKey(b)).map(s =>
+            '<div class="flex justify-between text-[11px] text-gray-600 px-1 gap-2"><span class="truncate">' +
+                (status(s) === 'completed' ? '<i class="fa-solid fa-check text-emerald-600 mr-1"></i>' : '<i class="fa-regular fa-clock text-gray-400 mr-1"></i>') +
+                C.esc(C.fmtDate(s.date)) + ' — ' + C.esc(s.match) + '</span>' +
+                '<span class="shrink-0 ' + (s.source === 'operator' && !s.venue ? 'text-indigo-600' : (C.isTrip(s.venue) ? 'text-emerald-700' : 'text-gray-400')) + '">' + C.esc(s.source === 'operator' && !s.venue ? s.opLabel : C.detectCity(s.venue).name) + '</span></div>'
         ).join('') : '<p class="text-[11px] text-gray-400 px-1">Bu ayda çəkiliş yoxdur.</p>';
     }
 
@@ -526,6 +540,17 @@
         $('f-venue').value = item ? item.venue : '';
         $('f-sport').value = item ? item.sport : 'Futbol';
         $('f-type').value = item ? item.type : 'canlı';
+        $('f-flash').value = item ? (item.flash || '') : '';
+        const op = item && item.source === 'operator';
+        // Operator komandası üçün yalnız tarix və ad məcburidir
+        const relaxed = op || team() === 'operator';
+        document.querySelectorAll('label[for=f-gather] .text-red-500, label[for=f-gnote] .text-red-500').forEach(x => x.classList.toggle('hidden', relaxed));
+        $('f-opinfo').classList.toggle('hidden', !op);
+        if (op) {
+            $('edit-title').textContent = 'Növbəyə məlumat əlavə et';
+            $('f-opinfo').innerHTML = '<i class="fa-solid ' + (OP_ICON[item.kind] || 'fa-video') + ' mr-1"></i><strong>' + C.esc(item.opLabel) + '</strong> · operator cədvəlindən. Yer, saat və digər məlumatları əlavə edin — yeni cədvəl yüklənəndə də qalacaq.' +
+                ((item.crew || []).length ? '<br><span class="text-indigo-600">Komanda: ' + C.esc(item.crew.join(', ')) + '</span>' : '');
+        }
         openModal('edit-modal');
     }
 
@@ -535,10 +560,11 @@
         const iso = $('f-date').dataset.date;
         if (!iso || !C.parseISO(iso)) errs.push(['f-date', 'Tarix mütləqdir — təqvimdən seçin.']);
         const gt = $('f-gather').value.trim(), st = $('f-start').value.trim();
-        if (!gt) errs.push(['f-gather', 'Yığışma saatı mütləqdir.']);
-        else if (!C.timePicker.isValid(gt)) errs.push(['f-gather', 'Saatı 24 saat formatında yazın (məs: 07:30).']);
+        const editingOp = team() === 'operator' || (state.shoots.find(x => x.id === $('f-id').value) || {}).source === 'operator';
+        if (!gt && !editingOp) errs.push(['f-gather', 'Yığışma saatı mütləqdir.']);
+        else if (gt && !C.timePicker.isValid(gt)) errs.push(['f-gather', 'Saatı 24 saat formatında yazın (məs: 07:30).']);
         if (st && !C.timePicker.isValid(st)) errs.push(['f-start', 'Saatı 24 saat formatında yazın (məs: 15:30).']);
-        if (!$('f-gnote').value.trim()) errs.push(['f-gnote', 'Yığışma qeydi mütləqdir.']);
+        if (!$('f-gnote').value.trim() && !editingOp) errs.push(['f-gnote', 'Yığışma qeydi mütləqdir.']);
         if (!$('f-match').value.trim()) errs.push(['f-match', 'Çəkilişin adını daxil edin.']);
         errs.forEach(([id, msg]) => setError(id, msg));
         if (errs.length) {
@@ -564,8 +590,10 @@
             match: $('f-match').value.trim(),
             venue: $('f-venue').value.trim(),
             sport: $('f-sport').value,
-            type: $('f-type').value
+            type: $('f-type').value,
+            flash: $('f-flash').value.trim()
         });
+        if (item.source === 'operator') item.detailed = true;
         delete item.weather; // köhnə əl ilə yazılmış hava dəyərləri artıq istifadə olunmur
         if (old) {
             if (isMine(old)) item.mine = true; // redaktə olunan çəkiliş istifadəçidə qalır
@@ -637,7 +665,7 @@
                 '<div class="flex justify-between items-center gap-2"><span class="font-bold text-gray-900">v' + h.version + (i === 0 ? ' · aktiv' : '') + '</span>' +
                     '<span class="flex items-center gap-1"><span class="text-gray-400">' + new Date(h.uploadedAt).toLocaleString('az-AZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</span>' +
                     '<button data-hist-del="' + h.version + '" class="w-7 h-7 -mr-1 rounded-lg text-red-500 active:bg-red-50" aria-label="v' + h.version + ' versiyasını sil"><i class="fa-solid fa-trash-can"></i></button></span></div>' +
-                '<p class="text-gray-600 break-all">' + C.esc(h.fileName) + '</p>' +
+                '<p class="text-gray-600 break-all">' + (h.source === 'operator' ? '<span class="text-indigo-700 font-semibold">Operator · </span>' : '') + C.esc(h.fileName) + '</p>' +
                 '<p class="text-gray-500">Dövr: ' + per + ' · sizin üçün ' + h.myCount + ' çəkiliş' +
                 (h.prevVersion ? ' · əvvəlki (v' + h.prevVersion + ') ilə: +' + (d.added || 0) + ' / −' + (d.removed || 0) + ' / ✎' + (d.changed || 0) : '') + '</p>' +
             '</div>';
@@ -679,26 +707,56 @@
 
     // ---------- İlk giriş ----------
     function showOnboarding() {
+        obTeam = '';
+        setTeamButtons('#ob-team', '');
+        setOnboardLabels('sts');
+        $('ob-err').classList.add('hidden'); $('ob-team-err').classList.add('hidden');
         $('ob-name').value = state.profile.name || '';
         $('onboard').classList.remove('hidden');
         setTimeout(() => $('ob-name').focus(), 300);
     }
+    let obTeam = '';
+    function setTeamButtons(container, t) {
+        document.querySelectorAll(container + ' [data-team]').forEach(b => {
+            const on = b.dataset.team === t;
+            if (container === '#ob-team') {
+                b.classList.toggle('border-blue-600', on); b.classList.toggle('bg-blue-50', on);
+                b.classList.toggle('border-gray-200', !on); b.classList.toggle('bg-gray-50', !on);
+            } else {
+                b.classList.toggle('bg-white', on); b.classList.toggle('shadow-sm', on); b.classList.toggle('text-blue-600', on);
+            }
+            b.setAttribute('aria-pressed', on);
+        });
+    }
+    function nameOk(name, t) {
+        const words = name.split(' ').filter(w => w.replace(/\./g, '').length > 1);
+        return t === 'operator' ? words.length >= 1 : words.length >= 2;
+    }
+    function setOnboardLabels(t) {
+        const op = t === 'operator';
+        $('ob-name-label').textContent = op ? 'Adınız' : 'Soyad Ad';
+        $('ob-name-hint').textContent = op ? 'Operator cədvəlində necə yazılıbsa, elə yazın (məs: Anar və ya Anar İs.).' : 'Qrafikdə necə yazılıbsa, elə yazın (məs: Məmmədov İlham).';
+    }
     function submitOnboarding(e) {
         e.preventDefault();
+        if (!obTeam) { $('ob-team-err').classList.remove('hidden'); }
         const name = $('ob-name').value.trim().replace(/\s+/g, ' ');
         const err = $('ob-err');
-        if (name.split(' ').filter(w => w.length > 1).length < 2) {
-            err.textContent = 'Soyadınızı və adınızı yazın (məs: Məmmədov İlham).';
+        if (!nameOk(name, obTeam || 'sts') || !obTeam) {
+            if (nameOk(name, obTeam || 'sts')) return;
+            err.textContent = obTeam === 'operator' ? 'Adınızı yazın (məs: Anar və ya Anar İs.).' : 'Soyadınızı və adınızı yazın (məs: Məmmədov İlham).';
             err.classList.remove('hidden');
             $('ob-name').classList.add('field-error');
             return;
         }
         err.classList.add('hidden'); $('ob-name').classList.remove('field-error');
         state.profile.name = name;
+        state.profile.team = obTeam;
+        state.profile.opAlias = obTeam === 'operator' ? name : '';
         save();
         $('onboard').classList.add('hidden');
         refresh();
-        toast('Xoş gəldiniz, ' + name.split(' ').slice(-1)[0] + '! İndi qrafiki yükləyin.', 3500);
+        toast('Xoş gəldiniz, ' + (obTeam === 'operator' ? name : name.split(' ').slice(-1)[0]) + '! İndi qrafiki yükləyin.', 3500);
     }
 
     function openHistory() {
@@ -750,21 +808,35 @@
     function applyNewSchedule(res, fileName) {
         const dates = res.shoots.map(s => s.date).sort();
         const period = [dates[0], dates[dates.length - 1]];
+        const src = res.type === 'operator' ? 'operator' : 'main';
+        const sameSrc = s => (s.source || 'main') === src;
         const inPeriod = s => s.date >= period[0] && s.date <= period[1];
-        // Eyni dövrün əvvəlki idxal olunmuş versiyası (əllə əlavə edilənlər toxunulmur)
-        const prevImported = state.shoots.filter(s => !s.manual && inPeriod(s));
+        // Eyni dövrün və eyni növ qrafikin əvvəlki versiyası (əllə əlavə edilənlər toxunulmur)
+        const prevImported = state.shoots.filter(s => !s.manual && inPeriod(s) && sameSrc(s));
         const prevMine = prevImported.filter(isMine);
-        const newMine = res.shoots.filter(s => s.crew.some(n => C.nameMatch(n, state.profile.name)));
+        const newMine = res.shoots.filter(isMine);
         const prevVersion = prevImported.length ? (prevImported[0].version || state.meta.version || null) : null;
         const diff = diffMine(prevMine, newMine);
 
         const version = (state.meta.version || 0) + 1;
         res.shoots.forEach(s => { s.version = version; });
+        if (src === 'operator') {
+            // Operatorun əlavə etdiyi məlumatlar (yer, başlama, qeyd, yayım, idman, flaş) yeni versiyaya köçürülür
+            const keyOf = s => s.date + '|' + s.opLabel;
+            const det = new Map(prevImported.filter(s => s.detailed).map(s => [keyOf(s), s]));
+            res.shoots.forEach(s => {
+                const o = det.get(keyOf(s));
+                if (!o) return;
+                ['venue', 'start', 'gatherNote', 'type', 'sport', 'flash'].forEach(k => { if (o[k]) s[k] = o[k]; });
+                if (!s.gather && o.gather) s.gather = o.gather;
+                s.detailed = true;
+            });
+        }
         // Son təsdiqlənmiş versiya həmin dövr üçün əsasdır
-        state.shoots = state.shoots.filter(s => s.manual || !inPeriod(s)).concat(res.shoots);
+        state.shoots = state.shoots.filter(s => s.manual || !inPeriod(s) || !sameSrc(s)).concat(res.shoots);
         Object.keys(res.people).forEach(n => { state.people[n] = res.people[n] || state.people[n] || ''; });
         state.history.push({
-            version, prevVersion, uploadedAt: Date.now(), fileName, period,
+            version, prevVersion, uploadedAt: Date.now(), fileName, period, source: src,
             myCount: newMine.length, total: res.shoots.length,
             diff: { added: diff.added, removed: diff.removed, changed: diff.changed },
             previous: prevImported // əvvəlki versiyanın surəti tarixçədə saxlanılır
@@ -798,6 +870,16 @@
             else if (/\.xls$/i.test(name)) throw new Error('Köhnə .xls formatı dəstəklənmir. Faylı Excel-də "Save As → .xlsx" kimi saxlayın.');
             else sheets = await C.readXlsx(await file.arrayBuffer());
 
+            const op = C.parseOperatorSchedule(sheets);
+            if (op && team() !== 'operator') {
+                showUploadResult('warn', '<i class="fa-solid fa-circle-info mr-1"></i><strong>Bu, operatorlar cədvəlidir.</strong><br>Siz "STS heyəti" komandasındasınız, ona görə idxal edilmədi. Operatorsunuzsa, adınıza toxunub Profil → Komanda → <strong>Operator</strong> seçin.');
+                return;
+            }
+            if (op) { handleOperatorImport(op, name); return; }
+            if (team() === 'operator') {
+                showUploadResult('warn', '<i class="fa-solid fa-circle-info mr-1"></i><strong>Bu, operatorlar cədvəli deyil.</strong><br>Operator komandası üçün Studiya / STS-1 / Növbətçi sütunları olan cədvəl yükləyin. STS heyətindənsinizsə, Profil → Komanda → <strong>STS heyəti</strong> seçin.');
+                return;
+            }
             const res = C.parseSchedule(sheets, { refYear: new Date().getFullYear() });
             if (!res.shoots.length) throw new Error(res.warnings.join(' ') || 'Cədvəldə çəkiliş tapılmadı.');
 
@@ -832,6 +914,14 @@
         }
     }
 
+    /** Operator cədvəli: girişdə yazılmış ad cədvəldə axtarılır ("Anar" və "Anar İs." fərqlidir) */
+    function handleOperatorImport(op, fileName) {
+        const me = opName();
+        if (Object.keys(op.people).some(n => C.opSameName(n, me))) { finishImport(op, fileName); return; }
+        showUploadResult('warn', '<i class="fa-solid fa-user-xmark mr-1"></i><strong>"' + C.esc(me) + '" adı operator cədvəlində tapılmadı.</strong> Cədvəl idxal edilmədi.<br>' +
+            'Adınızı cədvəldə yazıldığı kimi yazın (məs: "Anar" və ya "Anar İs.") — adınıza toxunun → Profil → Ad.');
+    }
+
     function finishImport(res, name) {
         const r = applyNewSchedule(res, name);
         const d = r.diff;
@@ -839,7 +929,7 @@
         closeModal('upload-modal');
         closeModal('confirm-modal');
         refresh();
-        let msg = '✅ Qrafik v' + r.version + ' təsdiqləndi · sizin üçün ' + r.newMine.length + ' çəkiliş';
+        let msg = '✅ ' + (res.type === 'operator' ? 'Operator qrafiki' : 'Qrafik') + ' v' + r.version + ' təsdiqləndi · sizin üçün ' + r.newMine.length + (res.type === 'operator' ? ' növbə' : ' çəkiliş');
         if (r.prevVersion) msg += ' · ' + d.added + ' yeni, ' + d.changed + ' dəyişən, ' + d.removed + ' silinən';
         toast(msg, 4500);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -934,14 +1024,15 @@
             if (open) { open.classList.toggle('hidden'); return; }
             const ed = e.target.closest('[data-edit]');
             if (ed) { openEdit(ed.dataset.edit); return; }
+            const card = e.target.closest('[data-card]');
+            if (card && !e.target.closest('[data-del]') && !e.target.closest('.menu')) { openEdit(card.dataset.card); return; }
             const del = e.target.closest('[data-del]');
             if (del) { deleteShoot(del.dataset.del); }
         });
 
-        $('open-stats').onclick = () => { selectedWeek = null; fillMonths(); updateStats(); openModal('stats-modal'); };
-        $('stats-month').onchange = () => { selectedWeek = null; updateStats(); };
-        $('week-rows').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) { selectedWeek = b.dataset.week; renderWeeks($('stats-month').value); } });
-        $('month-bars').addEventListener('click', e => { const b = e.target.closest('[data-month]'); if (b) { $('stats-month').value = b.dataset.month; selectedWeek = null; updateStats(); } });
+        $('open-stats').onclick = () => { fillMonths(); updateStats(); openModal('stats-modal'); };
+        $('stats-month').onchange = updateStats;
+        $('month-bars').addEventListener('click', e => { const b = e.target.closest('[data-month]'); if (b) { $('stats-month').value = b.dataset.month; updateStats(); } });
 
         // Yüklə → fayl seçimi → təsdiq pəncərəsi
         $('open-upload').onclick = () => $('schedule-input').click();
@@ -956,6 +1047,13 @@
         $('add-shoot').onclick = () => openEdit(null);
         $('clear-all').onclick = clearAll;
         $('onboard-form').onsubmit = submitOnboarding;
+        document.querySelectorAll('#ob-team [data-team]').forEach(b => b.addEventListener('click', () => { obTeam = b.dataset.team; setTeamButtons('#ob-team', obTeam); setOnboardLabels(obTeam); $('ob-team-err').classList.add('hidden'); }));
+        document.querySelectorAll('#pf-team [data-team]').forEach(b => b.addEventListener('click', () => {
+            state.profile.team = b.dataset.team;
+            state.profile.opAlias = b.dataset.team === 'operator' ? state.profile.name : '';
+            save(); applyTeamUI(); refresh();
+            toast(b.dataset.team === 'operator' ? 'Komanda: Operator' : 'Komanda: STS heyəti');
+        }));
         $('ob-name').addEventListener('input', () => { $('ob-err').classList.add('hidden'); $('ob-name').classList.remove('field-error'); });
         $('history-list').addEventListener('click', e => { const b = e.target.closest('[data-hist-del]'); if (b) deleteVersion(+b.dataset.histDel); });
         $('edit-form').onsubmit = saveEdit;
@@ -980,8 +1078,22 @@
             if (!$('pf-name').value.trim()) { $('pf-name').focus(); return; }
             state.profile.name = $('pf-name').value.trim().replace(/\s+/g, ' ');
             state.profile.role = $('pf-role').value.trim();
+            state.profile.opAlias = team() === 'operator' ? state.profile.name : '';
             save(); closeModal('profile-modal'); refresh();
             toast('Profil yeniləndi');
+        };
+        $('logout').onclick = async () => {
+            const ok = await confirmBox('Çıxış etmək istəyirsiniz? Profiliniz və cədvəliniz bu telefondan silinəcək.', { title: 'Çıxış', icon: 'fa-right-from-bracket', yes: 'Bəli', no: 'Xeyr' });
+            if (!ok) return;
+            const theme = state.theme;
+            state = defaultState();
+            state.theme = theme;
+            save();
+            Object.keys(weatherCache).forEach(k => delete weatherCache[k]);
+            closeModal('profile-modal');
+            switchTab('my');
+            refresh();
+            showOnboarding();
         };
         $('remove-avatar').onclick = () => { state.profile.avatar = null; save(); renderProfile(); toast('Profil şəkli silindi'); };
 
