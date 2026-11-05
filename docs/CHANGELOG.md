@@ -1,5 +1,17 @@
 # Dəyişikliklər
 
+## 2.2.0 — 05.11.2026 — Admin girişi və paylaşılan qrafiklər
+- Giriş ekranının aşağısında və Profildə kiçik **"Admin girişi"** keçidi: e-poçt + şifrə ilə Firebase Authentication.
+- Admin hüququ yalnız serverdə: Custom Claim `admin: true` (`admin-tools/set-admin.mjs`, Firebase Admin SDK). Tətbiq UID yoxlamır.
+- Admin paneli: qrafik yükləmə (bütün işçilərə), eyni dövr üçün yeniləmə, silmə. İşçilər yalnız oxuyur — qoruma `firestore.rules` ilədir.
+- İşçilərdə paylaşılan qrafik avtomatik tətbiq olunur (mövcud versiya/tarixçə məntiqi ilə); admin silərsə, işçilərdən də silinir.
+- İşçilərin Soyad Ad + anonim girişi dəyişməyib. Ətraflı: `docs/ADMIN.md`.
+
+## 2.1.2 — 05.11.2026 — Firebase diaqnostikası
+- **Düzəliş:** Web API açarı (`…HN_I`) Google tərəfindən `API_KEY_INVALID` qaytarırdı; `firebase-config.js`-də layihənin işlək açarı (`…0boFs`, `google-services.json`-dakı) istifadə olunur — anonim giriş yoxlanıldı, uğurludur.
+- Versiya 2.1.2 — versiya 2.1.2 — telefondakı APK-nın köhnə (Android açarlı) yığım olub-olmadığını ayırmaq üçün.
+- Profildə bulud xətası göstəriləndə istifadə olunan API açarının son 4 simvolu da yazılır (məs. `açar …HN_I`).
+
 ## 2.1.1 — 05.11.2026 — Firebase qoşulması
 - `google-services.json` layihənin kökündə saxlanılır; `npm run android:init` zamanı `scripts/patch-android.mjs` onu `android/app/` qovluğuna köçürür.
 - Google Services Gradle plagini: Capacitor 6 Android şablonu artıq `com.google.gms:google-services:4.4.0` classpath-ını ehtiva edir və `google-services.json` olduqda plagini avtomatik tətbiq edir — əlavə Gradle dəyişikliyi lazım olmadı.

@@ -318,9 +318,6 @@
   .z-50 {
     z-index: 50;
   }
-  .z-\[60\] {
-    z-index: 60;
-  }
   .z-\[65\] {
     z-index: 65;
   }
@@ -329,6 +326,12 @@
   }
   .z-\[80\] {
     z-index: 80;
+  }
+  .z-\[85\] {
+    z-index: 85;
+  }
+  .z-\[95\] {
+    z-index: 95;
   }
   .mx-auto {
     margin-inline: auto;
@@ -1181,6 +1184,12 @@
   .tabular-nums {
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
+  }
+  .underline {
+    text-decoration-line: underline;
+  }
+  .underline-offset-2 {
+    text-underline-offset: 2px;
   }
   .antialiased {
     -webkit-font-smoothing: antialiased;

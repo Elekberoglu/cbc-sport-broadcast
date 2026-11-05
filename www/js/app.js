@@ -698,7 +698,7 @@
         state.shoots = [];
         state.people = {};
         state.history = [];
-        state.meta = { version: 0, uploadedAt: null, fileName: null, image: null };
+        state.meta = { version: 0, uploadedAt: null, fileName: null, image: null, cloud: state.meta.cloud };
         Object.keys(weatherCache).forEach(k => delete weatherCache[k]);
         save();
         refresh();
@@ -756,6 +756,7 @@
         save();
         $('onboard').classList.add('hidden');
         refresh();
+        syncCloudSchedules();
         toast('Xoş gəldiniz, ' + (obTeam === 'operator' ? name : name.split(' ').slice(-1)[0]) + '! İndi qrafiki yükləyin.', 3500);
     }
 
@@ -935,6 +936,169 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // ---------- Bulud qrafikləri: admin yükləyir, işçilərdə avtomatik yenilənir ----------
+    let cloudDocs = null;         // Firestore-dakı paylaşılan qrafiklər (son snapshot)
+    let cloudWatching = false;
+    function startCloudSync() {
+        if (cloudWatching || !C.cloud) return;
+        cloudWatching = true;
+        C.cloud.watchSchedules(list => { cloudDocs = list; syncCloudSchedules(); renderAdminList(); },
+            err => { cloudWatching = false; console.warn('Firestore:', err && (err.code || err.message)); });
+    }
+    /** Buluddakı yeni/yenilənmiş qrafikləri mövcud idxal məntiqi ilə (versiya, tarixçə) tətbiq edir */
+    function syncCloudSchedules() {
+        if (!cloudDocs || !state.profile.name) return;
+        const applied = state.meta.cloud = state.meta.cloud || {};
+        const want = team() === 'operator' ? 'operator' : 'main';
+        let added = 0, removed = 0;
+        // Admin buluddan silibsə, həmin qrafikdən gələn çəkilişlər də silinir
+        Object.keys(applied).forEach(id => {
+            if (cloudDocs.some(d => d.id === id)) return;
+            const n = state.shoots.length;
+            state.shoots = state.shoots.filter(s => s.cloudId !== id);
+            removed += n - state.shoots.length;
+            delete applied[id];
+        });
+        cloudDocs.filter(d => d.type === want && d.uploadedAt && applied[d.id] !== d.uploadedAt)
+            .sort((a, b) => a.uploadedAt - b.uploadedAt)
+            .forEach(d => {
+                let res = null;
+                try { res = JSON.parse(d.data); } catch (e) { return; }
+                if (!res || !Array.isArray(res.shoots) || !res.shoots.length) return;
+                res.people = res.people || {};
+                res.shoots.forEach(s => { s.cloudId = d.id; });
+                applyNewSchedule(res, d.fileName || 'Bulud qrafiki');
+                state.meta.cloud = applied;
+                applied[d.id] = d.uploadedAt;
+                added++;
+            });
+        if (!added && !removed) return;
+        save();
+        refresh();
+        toast(added ? '☁️ Qrafik buluddan yeniləndi' : '☁️ Admin qrafiki buluddan sildi', 3500);
+    }
+
+    // ---------- Admin ----------
+    const TYPE_LABEL = { main: 'STS', operator: 'Operator' };
+    let admTarget = null;         // "Yenilə" basılanda əvəzlənəcək sənəd
+    function admMsg(kind, html) {
+        const r = $('adm-msg');
+        const cls = { ok: 'bg-emerald-50 text-emerald-800 border border-emerald-100', err: 'bg-red-50 text-red-700 border border-red-100', info: 'bg-blue-50 text-blue-800 border border-blue-100' };
+        r.className = 'rounded-xl p-3 leading-relaxed ' + (cls[kind] || cls.info);
+        r.innerHTML = html;
+        r.classList.toggle('hidden', !html);
+    }
+    function openAdmin() {
+        const st = C.cloud ? C.cloud.status() : {};
+        $('adm-err').classList.add('hidden');
+        admMsg('info', '');
+        $('adm-login').classList.toggle('hidden', !!st.admin);
+        $('adm-panel').classList.toggle('hidden', !st.admin);
+        if (st.admin) { $('adm-who').textContent = st.email || ''; renderAdminList(); }
+        openModal('admin-modal');
+        if (!st.admin) setTimeout(() => $('adm-email').focus(), 200);
+    }
+    function admErrText(x) {
+        const c = (x && x.code) || '';
+        if (c === 'cbc/not-admin') return 'Bu hesabın admin hüququ yoxdur. Hüquq serverdə (Firebase Admin SDK ilə) təyin edilməlidir.';
+        if (/invalid-credential|wrong-password|user-not-found|invalid-email|missing-password/.test(c)) return 'E-poçt və ya şifrə yanlışdır.';
+        if (/too-many-requests/.test(c)) return 'Çox cəhd edildi. Bir az sonra yenidən yoxlayın.';
+        if (/network-request-failed|unavailable/.test(c)) return 'İnternet bağlantısı yoxdur.';
+        if (/operation-not-allowed/.test(c)) return 'Firebase-də E-poçt/Şifrə ilə giriş aktiv deyil.';
+        if (/permission-denied/.test(c)) return 'İcazə yoxdur: admin hüququ serverdə təsdiqlənmədi və ya Firestore qaydaları yayımlanmayıb.';
+        return 'Alınmadı (' + (c || (x && x.message) || 'xəta') + ').';
+    }
+    async function adminLogin(e) {
+        e.preventDefault();
+        const email = $('adm-email').value.trim(), pass = $('adm-pass').value;
+        const err = $('adm-err'), btn = $('adm-login-btn');
+        err.classList.add('hidden');
+        if (!email || !pass) { err.textContent = 'E-poçt və şifrəni yazın.'; err.classList.remove('hidden'); return; }
+        if (!C.cloud) { err.textContent = 'Bulud modulu yüklənməyib.'; err.classList.remove('hidden'); return; }
+        btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Yoxlanılır…';
+        try {
+            await C.cloud.adminSignIn(email, pass);
+            $('adm-pass').value = '';
+            openAdmin();
+            startCloudSync();
+        } catch (x) {
+            err.textContent = admErrText(x);
+            err.classList.remove('hidden');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Daxil ol';
+        }
+    }
+    function renderAdminList() {
+        const el = $('adm-list');
+        if (!el || $('adm-panel').classList.contains('hidden')) return;
+        if (!cloudDocs) { el.innerHTML = '<p class="text-[11px] text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Yüklənir…</p>'; return; }
+        if (!cloudDocs.length) { el.innerHTML = '<p class="text-[11px] text-gray-400">Hələ paylaşılan qrafik yoxdur.</p>'; return; }
+        el.innerHTML = cloudDocs.slice().sort((a, b) => String(b.period && b.period[0]).localeCompare(String(a.period && a.period[0]))).map(d => {
+            const per = Array.isArray(d.period) ? C.fmtDMY(d.period[0]) + ' – ' + C.fmtDMY(d.period[1]) : '';
+            const when = d.uploadedAt ? new Date(d.uploadedAt).toLocaleString('az-AZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'göndərilir…';
+            return '<div class="border border-gray-100 bg-gray-50 rounded-xl p-2.5 text-[11px]">' +
+                '<div class="flex justify-between items-center gap-2"><span class="font-bold text-gray-900">' + (TYPE_LABEL[d.type] || '?') + ' · ' + per + '</span><span class="text-gray-400">' + when + '</span></div>' +
+                '<p class="text-gray-600 break-all">' + C.esc(d.fileName || '') + ' · ' + (d.total || 0) + ' çəkiliş</p>' +
+                '<div class="flex gap-2 mt-1.5">' +
+                    '<button data-adm-upd="' + C.esc(d.id) + '" class="flex-1 py-1.5 rounded-lg bg-white border border-gray-200 text-blue-600 font-semibold"><i class="fa-solid fa-rotate mr-1"></i>Yenilə</button>' +
+                    '<button data-adm-del="' + C.esc(d.id) + '" class="flex-1 py-1.5 rounded-lg bg-white border border-red-100 text-red-600 font-semibold"><i class="fa-solid fa-trash-can mr-1"></i>Sil</button>' +
+                '</div></div>';
+        }).join('');
+    }
+    async function adminFile(file) {
+        const target = admTarget;
+        admTarget = null;
+        if (!file) return;
+        const name = file.name || 'fayl';
+        admMsg('info', '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Oxunur…');
+        try {
+            if (isImageFile(file)) throw new Error('Şəkil buluda yüklənmir — Excel (.xlsx) faylı seçin.');
+            if (/\.xls$/i.test(name)) throw new Error('Köhnə .xls formatı dəstəklənmir. Faylı Excel-də "Save As → .xlsx" kimi saxlayın.');
+            const sheets = (/\.csv$/i.test(name) || file.type === 'text/csv') ? C.readCsv(await file.text()) : await C.readXlsx(await file.arrayBuffer());
+            const op = C.parseOperatorSchedule(sheets);
+            const res = op || C.parseSchedule(sheets, { refYear: new Date().getFullYear() });
+            if (!res.shoots.length) throw new Error((res.warnings || []).join(' ') || 'Cədvəldə çəkiliş tapılmadı.');
+            const type = op ? 'operator' : 'main';
+            const dates = res.shoots.map(s => s.date).sort();
+            const period = [dates[0], dates[dates.length - 1]];
+            const old = target ? (cloudDocs || []).find(d => d.id === target) : null;
+            if (old && old.type !== type) throw new Error('Bu qeyd ' + TYPE_LABEL[old.type] + ' qrafikidir — eyni növ fayl seçin.');
+            const id = target || (type + '_' + period[0] + '_' + period[1]);
+            const exists = (cloudDocs || []).some(d => d.id === id);
+            const data = JSON.stringify({ type: res.type || '', shoots: res.shoots, people: res.people || {} });
+            if (data.length > 900000) throw new Error('Qrafik çox böyükdür (' + fileSize(data.length) + ').');
+            const ok = await confirmBox(TYPE_LABEL[type] + ' qrafiki · ' + C.fmtDMY(period[0]) + ' – ' + C.fmtDMY(period[1]) + ' · ' + res.shoots.length + ' çəkiliş. ' +
+                (exists ? 'Buluddakı qrafik bu faylla əvəzlənsin?' : 'Bütün işçilərə göndərilsin?'),
+                { title: exists ? 'Qrafiki yenilə' : 'Qrafiki paylaş', icon: 'fa-cloud-arrow-up', yes: 'Bəli', no: 'Xeyr' });
+            if (!ok) { admMsg('info', ''); return; }
+            admMsg('info', '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Göndərilir…');
+            await C.cloud.publishSchedule(id, { type, period, fileName: name, total: res.shoots.length, data });
+            admMsg('ok', '<i class="fa-solid fa-circle-check mr-1"></i>' + (exists ? 'Yeniləndi' : 'Paylaşıldı') + ': ' + C.esc(name) + ' — işçilərin tətbiqində avtomatik görünəcək.');
+        } catch (x) {
+            console.error(x);
+            admMsg('err', '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' + C.esc(x && x.code ? admErrText(x) : (x.message || 'Xəta')));
+        }
+    }
+    async function adminDelete(id) {
+        const d = (cloudDocs || []).find(x => x.id === id);
+        if (!d) return;
+        const per = Array.isArray(d.period) ? C.fmtDMY(d.period[0]) + ' – ' + C.fmtDMY(d.period[1]) : '';
+        const ok = await confirmBox(TYPE_LABEL[d.type] + ' qrafiki (' + per + ') buluddan silinsin? Bütün işçilərin tətbiqindən də silinəcək.', { title: 'Qrafiki sil', yes: 'Bəli', no: 'Xeyr' });
+        if (!ok) return;
+        try {
+            await C.cloud.deleteSchedule(id);
+            admMsg('ok', '<i class="fa-solid fa-circle-check mr-1"></i>Silindi: ' + per);
+        } catch (x) {
+            admMsg('err', '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' + C.esc(admErrText(x)));
+        }
+    }
+    async function adminLogout() {
+        const ok = await confirmBox('Admin hesabından çıxılsın? Tətbiq adi işçi rejimində davam edəcək.', { title: 'Admin çıxışı', icon: 'fa-right-from-bracket', yes: 'Bəli', no: 'Xeyr' });
+        if (!ok) return;
+        try { await C.cloud.adminSignOut(); } catch (x) { console.warn(x); }
+        openAdmin();
+    }
+
     // ---------- Bildirişlər ----------
     async function syncNotifications() {
         const next = await C.notify.reschedule(myShoots(), state.notify.enabled);
@@ -1047,11 +1211,21 @@
         $('add-shoot').onclick = () => openEdit(null);
         $('clear-all').onclick = clearAll;
         $('onboard-form').onsubmit = submitOnboarding;
+        $('ob-admin').onclick = openAdmin;
+        $('pf-admin').onclick = () => { closeModal('profile-modal'); openAdmin(); };
+        $('adm-login').onsubmit = adminLogin;
+        $('adm-upload').onclick = () => { admTarget = null; $('adm-file').click(); };
+        $('adm-file').onchange = e => { const f = e.target.files[0]; e.target.value = ''; adminFile(f); };
+        $('adm-list').addEventListener('click', e => {
+            const u = e.target.closest('[data-adm-upd]'); if (u) { admTarget = u.dataset.admUpd; $('adm-file').click(); return; }
+            const d = e.target.closest('[data-adm-del]'); if (d) adminDelete(d.dataset.admDel);
+        });
+        $('adm-logout').onclick = adminLogout;
         document.querySelectorAll('#ob-team [data-team]').forEach(b => b.addEventListener('click', () => { obTeam = b.dataset.team; setTeamButtons('#ob-team', obTeam); setOnboardLabels(obTeam); $('ob-team-err').classList.add('hidden'); }));
         document.querySelectorAll('#pf-team [data-team]').forEach(b => b.addEventListener('click', () => {
             state.profile.team = b.dataset.team;
             state.profile.opAlias = b.dataset.team === 'operator' ? state.profile.name : '';
-            save(); applyTeamUI(); refresh();
+            save(); applyTeamUI(); refresh(); syncCloudSchedules();
             toast(b.dataset.team === 'operator' ? 'Komanda: Operator' : 'Komanda: STS heyəti');
         }));
         $('ob-name').addEventListener('input', () => { $('ob-err').classList.add('hidden'); $('ob-name').classList.remove('field-error'); });
@@ -1127,8 +1301,9 @@
     function renderCloudStatus(st) {
         const el = $('cloud-status');
         if (!el) return;
-        const txt = { idle: 'Bulud: gözləyir', connecting: 'Bulud: qoşulur…', online: 'Bulud: qoşulub (anonim giriş)', error: 'Bulud: qoşulmadı (' + (st.error || 'xəta') + ')', disabled: 'Bulud: konfiqurasiya yoxdur' }[st.state] || 'Bulud: —';
+        const txt = { idle: 'Bulud: gözləyir', connecting: 'Bulud: qoşulur…', online: st.admin ? 'Bulud: qoşulub (admin)' : 'Bulud: qoşulub (anonim giriş)', error: 'Bulud: qoşulmadı (' + (st.error || 'xəta') + ') · açar …' + String((g.CBC_FIREBASE_CONFIG || {}).apiKey || '').slice(-4), disabled: 'Bulud: konfiqurasiya yoxdur' }[st.state] || 'Bulud: —';
         el.innerHTML = '<i class="fa-solid ' + (st.state === 'online' ? 'fa-cloud text-emerald-500' : 'fa-cloud') + ' mr-1"></i>' + C.esc(txt);
+        if ($('pf-admin')) $('pf-admin').textContent = st.admin ? 'Admin paneli' : 'Admin girişi';
     }
 
     function init() {
@@ -1136,8 +1311,8 @@
         // Firebase: arxa planda anonim giriş (tətbiqin işini bloklamır)
         if (C.cloud) {
             C.cloud.onStatus(renderCloudStatus);
-            C.cloud.init().catch(e => console.warn('Firebase:', e && (e.code || e.message)));
-            g.addEventListener('online', () => { if (C.cloud.status().state !== 'online') C.cloud.init().catch(() => {}); });
+            C.cloud.init().then(startCloudSync).catch(e => console.warn('Firebase:', e && (e.code || e.message)));
+            g.addEventListener('online', () => { if (C.cloud.status().state !== 'online') C.cloud.init().then(startCloudSync).catch(() => {}); else startCloudSync(); });
         }
         applyTheme();
         refresh();

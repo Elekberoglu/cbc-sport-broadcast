@@ -132,7 +132,7 @@
         <!-- FOOTER -->
         <footer class="pt-6 pb-2 text-center border-t border-gray-200">
             <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
-            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v2.1.1</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v2.2.0</p>
         </footer>
     </main>
 
@@ -270,7 +270,7 @@
                 </div>
             </div>
             <button type="button" id="remove-avatar" class="text-red-600 font-semibold"><i class="fa-solid fa-trash-can mr-1"></i>Profil şəklini sil</button>
-            <p id="cloud-status" class="text-[10px] text-gray-400"><i class="fa-solid fa-cloud mr-1"></i>Bulud: —</p>
+            <div class="flex items-center justify-between gap-2"><p id="cloud-status" class="text-[10px] text-gray-400"><i class="fa-solid fa-cloud mr-1"></i>Bulud: —</p><button type="button" id="pf-admin" class="text-[10px] text-gray-400 underline underline-offset-2 shrink-0">Admin girişi</button></div>
             <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow active:bg-blue-700">Yadda Saxla</button>
             <button type="button" id="logout" class="w-full border border-red-200 bg-red-50 text-red-600 font-bold py-2.5 rounded-xl active:bg-red-100"><i class="fa-solid fa-right-from-bracket mr-1"></i>Çıxış</button>
         </form>
@@ -399,7 +399,7 @@
     </div>
 
     <!-- CONFIRM MODAL -->
-    <div id="confirm-modal" class="modal fixed inset-0 bg-black/50 z-[60] hidden items-center justify-center p-6">
+    <div id="confirm-modal" class="modal fixed inset-0 bg-black/50 z-[95] hidden items-center justify-center p-6">
         <div class="bg-white rounded-3xl max-w-xs w-full p-5 shadow-xl text-center space-y-4">
             <div class="w-12 h-12 mx-auto rounded-full bg-red-50 text-red-600 flex items-center justify-center text-xl"><i id="confirm-icon" class="fa-solid fa-trash-can"></i></div>
             <h3 id="confirm-title" class="hidden font-bold text-base text-gray-900"></h3>
@@ -449,6 +449,42 @@
                 <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">2</span><strong>Qrafik yüklə</strong> ilə həftəlik Excel qrafikini seçin</li>
                 <li><span class="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold items-center justify-center mr-1.5">3</span>Yalnız öz çəkilişlərinizi görəcəksiniz</li>
             </ol>
+            <button type="button" id="ob-admin" class="block mt-8 mx-auto text-[11px] text-gray-400 underline underline-offset-2"><i class="fa-solid fa-user-shield mr-1"></i>Admin girişi</button>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL (e-poçt + şifrə; hüquq serverdə yoxlanılır) -->
+    <div id="admin-modal" class="modal fixed inset-0 bg-black/50 z-[85] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-3 shadow-xl text-xs max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                <h3 class="font-bold text-base text-gray-900"><i class="fa-solid fa-user-shield text-blue-600 mr-1"></i>Admin</h3>
+                <button type="button" data-close="admin-modal" class="text-gray-400 w-8 h-8" aria-label="Bağla"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="adm-login" class="space-y-3" novalidate>
+                <p class="text-gray-500 leading-relaxed">Yalnız admin hüququ verilmiş hesab üçün. İşçilər bu bölməyə ehtiyac duymur.</p>
+                <div>
+                    <label for="adm-email" class="font-medium text-gray-700 block mb-1">E-poçt</label>
+                    <input id="adm-email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label for="adm-pass" class="font-medium text-gray-700 block mb-1">Şifrə</label>
+                    <input id="adm-pass" type="password" autocomplete="current-password" class="w-full border border-gray-200 rounded-xl p-2.5 bg-gray-50 text-sm">
+                </div>
+                <p id="adm-err" class="hidden text-[11px] text-red-600"></p>
+                <button type="submit" id="adm-login-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow active:bg-blue-700">Daxil ol</button>
+            </form>
+            <div id="adm-panel" class="hidden space-y-3">
+                <p class="text-gray-500">Daxil olub: <strong id="adm-who" class="text-gray-800 break-all"></strong></p>
+                <p class="text-gray-500 leading-relaxed">Yüklədiyiniz qrafik bütün işçilərin tətbiqində avtomatik yenilənir. Eyni dövr üçün təkrar yükləmə köhnəsini əvəz edir.</p>
+                <button type="button" id="adm-upload" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow active:bg-blue-700"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>Qrafik yüklə (Excel)</button>
+                <input type="file" id="adm-file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="hidden">
+                <div id="adm-msg" class="hidden rounded-xl p-3 leading-relaxed"></div>
+                <div>
+                    <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Paylaşılan qrafiklər</h4>
+                    <div id="adm-list" class="space-y-1.5"></div>
+                </div>
+                <button type="button" id="adm-logout" class="w-full border border-red-200 bg-red-50 text-red-600 font-bold py-2.5 rounded-xl active:bg-red-100"><i class="fa-solid fa-right-from-bracket mr-1"></i>Admin hesabından çıx</button>
+            </div>
         </div>
     </div>
 
