@@ -647,7 +647,7 @@
         const op = item && item.source === 'operator';
         // Operator komandası üçün yalnız tarix və ad məcburidir
         const relaxed = op || team() === 'operator';
-        document.querySelectorAll('label[for=f-gather] .text-red-500, label[for=f-gnote] .text-red-500').forEach(x => x.classList.toggle('hidden', relaxed));
+        document.querySelectorAll('label[for=f-gather] .text-red-500').forEach(x => x.classList.toggle('hidden', relaxed));
         $('f-opinfo').classList.toggle('hidden', !op);
         if (op) {
             $('edit-title').textContent = 'Növbəyə məlumat əlavə et';
@@ -667,7 +667,6 @@
         if (!gt && !editingOp) errs.push(['f-gather', 'Yığışma saatı mütləqdir.']);
         else if (gt && !C.timePicker.isValid(gt)) errs.push(['f-gather', 'Saatı 24 saat formatında yazın (məs: 07:30).']);
         if (st && !C.timePicker.isValid(st)) errs.push(['f-start', 'Saatı 24 saat formatında yazın (məs: 15:30).']);
-        if (!$('f-gnote').value.trim() && !editingOp) errs.push(['f-gnote', 'Yığışma qeydi mütləqdir.']);
         if (!$('f-match').value.trim()) errs.push(['f-match', 'Çəkilişin adını daxil edin.']);
         errs.forEach(([id, msg]) => setError(id, msg));
         if (errs.length) {
@@ -903,7 +902,7 @@
             if ((p.start || '') !== (s.start || '')) diffs.push('başlama ' + (p.start || '—') + '→' + (s.start || '—'));
             if (C.norm(p.venue) !== C.norm(s.venue)) diffs.push('yer dəyişdi');
             if (p.type !== s.type) diffs.push('yayım növü');
-            if ((p.gatherNote || '') !== (s.gatherNote || '')) diffs.push('qeyd');
+            if ((p.gatherNote || '') !== (s.gatherNote || '')) diffs.push('yığışma yeri');
             if (diffs.length) { changed++; details.push('✎ ' + C.fmtDMY(s.date) + ' ' + s.match + ': ' + diffs.join(', ')); }
         });
         o.forEach((s, k) => { if (!n.has(k)) { removed++; details.push('➖ ' + C.fmtDMY(s.date) + ' ' + s.match); } });

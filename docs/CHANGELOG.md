@@ -1,5 +1,8 @@
 # Dəyişikliklər
 
+## 2.3.2 — 05.11.2026
+- "Yığışma qeydi" → **"Yığışma yeri (məs: BOS)"**; artıq məcburi deyil.
+
 ## 2.3.1 — 05.11.2026
 - iPhone (veb-tətbiq) üçün Web Push açarı (VAPID) əlavə olundu: "Ağıllı xatırlatma" yandırılanda cədvəl bildirişləri də aktivləşir (iOS 16.4+, ana ekrandan açılan tətbiq).
 
