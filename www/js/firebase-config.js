@@ -2,7 +2,7 @@
    Mənbə: Firebase Console → Project settings → Your apps → Web app (CBC Sport Broadcast).
    Android üçün ayrıca google-services.json istifadə olunur (android/app/). */
 window.CBC_FIREBASE_CONFIG = {
-    apiKey: 'AIzaSyBdqHbM7W0wShQQLrF3_6cfRUTVYL_HN_I',
+    apiKey: 'AIzaSyBWZU76ARV6phKT2V-yLlnzjQPdEq0boFs',
     authDomain: 'cbc-sport-broadcast.firebaseapp.com',
     projectId: 'cbc-sport-broadcast',
     storageBucket: 'cbc-sport-broadcast.firebasestorage.app',
