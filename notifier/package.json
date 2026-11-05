@@ -1,0 +1,10 @@
+{
+  "name": "cbc-notifier",
+  "private": true,
+  "description": "Pulsuz push serveri: GitHub Actions hər 5 dəqiqədən bir yeni dərc olunmuş cədvəli yoxlayır və FCM bildirişi göndərir.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

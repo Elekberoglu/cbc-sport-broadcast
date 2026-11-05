@@ -16,7 +16,35 @@
 
 Cihaz tokenləri `devices/{uid}` sənədlərindədir. Hər istifadəçi yalnız öz sənədini yaza və silə bilir, tokenləri isə heç kim oxuya bilmir (yalnız server).
 
-## Əl ilə edilməli addımlar
+## Pulsuz variant (tövsiyə olunur): GitHub Actions server rolunda
+
+Blaze planı və kart **lazım deyil**. `.github/workflows/notify.yml` hər ~5 dəqiqədən bir `notifier/notify.mjs` skriptini işlədir:
+son 24 saatda dərc olunmuş və hələ bildirişi göndərilməmiş versiyalar üçün yuxarıdakı qaydalarla **bir** bildiriş göndərir.
+- Gecikmə: adətən 5–15 dəqiqə (GitHub planlaşdırılmış işləri bəzən gecikdirir).
+- Açar faylı yoxdur: GitHub OIDC → Google **Workload Identity Federation** → `cbc-notifier` xidmət hesabı.
+  Giriş yalnız `Elekberoglu/cbc-sport-broadcast` reposunun `main` budağından mümkündür.
+- Xidmət hesabının hüquqları: Firestore (oxuma/yazma), FCM göndərmə, istifadəçi siyahısını oxuma.
+- GitHub 60 gün fəaliyyəti olmayan repoda planlaşdırılmış işləri dayandırır — belə olsa, Actions → "Cədvəl bildirişi" → **Enable workflow**.
+
+### Bir dəfəlik quraşdırma (Google Cloud Shell)
+```bash
+PROJECT=cbc-sport-broadcast; SA=cbc-notifier@$PROJECT.iam.gserviceaccount.com
+gcloud config set project $PROJECT
+gcloud services enable iamcredentials.googleapis.com sts.googleapis.com fcm.googleapis.com
+gcloud iam service-accounts create cbc-notifier --display-name="CBC push (GitHub Actions)"
+for R in roles/datastore.user roles/firebasecloudmessaging.admin roles/firebaseauth.viewer; do
+  gcloud projects add-iam-policy-binding $PROJECT --member="serviceAccount:$SA" --role=$R --condition=None -q >/dev/null; done
+gcloud iam workload-identity-pools create github --location=global --display-name="GitHub Actions"
+gcloud iam workload-identity-pools providers create-oidc github --location=global --workload-identity-pool=github \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
+  --attribute-condition="assertion.repository=='Elekberoglu/cbc-sport-broadcast' && assertion.ref=='refs/heads/main'"
+gcloud iam service-accounts add-iam-policy-binding $SA --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/projects/722958292611/locations/global/workloadIdentityPools/github/attribute.repository/Elekberoglu/cbc-sport-broadcast"
+```
+Sonra Firestore qaydalarını yeniləyin (`devices` bölməsi əlavə olunub) və GitHub → Actions → "Cədvəl bildirişi" → **Run workflow** ilə yoxlayın.
+
+## Alternativ: Cloud Function (Blaze planı)
 
 ### 1. Blaze planı (məcburi)
 Cloud Functions yalnız **Blaze** (istifadəyə görə ödəniş) planında işləyir. Layihə hazırda **Spark** planındadır.
