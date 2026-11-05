@@ -15,7 +15,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return signedIn() && request.auth.token.admin == true;
+      return signedIn() && request.auth.token.get('admin', false) == true;
     }
 
     // Sənəd id-si: main_2026-10-27_2026-11-01 və ya operator_2026-11-02_2026-11-08
