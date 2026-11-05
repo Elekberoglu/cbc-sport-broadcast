@@ -1097,7 +1097,7 @@
         admMsg('info', '');
         $('adm-login').classList.toggle('hidden', !!st.admin);
         $('adm-panel').classList.toggle('hidden', !st.admin);
-        if (st.admin) { $('adm-who').textContent = st.email || ''; renderAdminList(); }
+        if (st.admin) { $('adm-who').textContent = st.email || ''; renderAdminList(); renderGhStatus(); }
         openModal('admin-modal');
         if (!st.admin) setTimeout(() => $('adm-email').focus(), 200);
     }
@@ -1121,6 +1121,7 @@
         btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Yoxlanılır…';
         try {
             await C.cloud.adminSignIn(email, pass);
+            ghToken = null;
             $('adm-pass').value = '';
             openAdmin();
             startCloudSync();
@@ -1176,12 +1177,66 @@
             if (!ok) { admMsg('info', ''); return; }
             admMsg('info', '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Göndərilir…');
             await C.cloud.publishSchedule(id, { type, period, fileName: name, total: res.shoots.length, data });
-            admMsg('ok', '<i class="fa-solid fa-circle-check mr-1"></i>' + (exists ? 'Yeniləndi' : 'Paylaşıldı') + ': ' + C.esc(name) + ' — işçilərin tətbiqində avtomatik görünəcək.');
+            const now = await notifyNow();
+            admMsg('ok', '<i class="fa-solid fa-circle-check mr-1"></i>' + (exists ? 'Yeniləndi' : 'Paylaşıldı') + ': ' + C.esc(name) + ' — işçilərin tətbiqində avtomatik görünəcək.' +
+                (now ? '<br><i class="fa-solid fa-bell mr-1"></i>Bildiriş 1–2 dəqiqəyə göndəriləcək.' : '<br><i class="fa-regular fa-clock mr-1"></i>Bildiriş planlı yoxlama ilə gedəcək (gecikə bilər).'));
         } catch (x) {
             console.error(x);
             admMsg('err', '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' + C.esc(x && x.code ? admErrText(x) : (x.message || 'Xəta')));
         }
     }
+
+    // ---------- Ani bildiriş: qrafik dərc olunan kimi GitHub-dakı bildiriş robotunu işə salır ----------
+    const GH_DISPATCH = 'https://api.github.com/repos/Elekberoglu/cbc-sport-broadcast/actions/workflows/notify.yml/dispatches';
+    let ghToken = null; // null = hələ oxunmayıb
+    function ghDispatch(token) {
+        return fetch(GH_DISPATCH, {
+            method: 'POST',
+            headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token, 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ref: 'main' })
+        }).then(r => r.status === 204);
+    }
+    async function loadGhToken() {
+        if (ghToken !== null) return ghToken;
+        try { ghToken = await C.cloud.getGithubToken(); } catch (e) { ghToken = ''; }
+        return ghToken;
+    }
+    /** true: robot dərhal işə salındı; false: 5 dəqiqəlik ehtiyat yoxlama göndərəcək */
+    async function notifyNow() {
+        const t = await loadGhToken();
+        if (!t) return false;
+        try { return await ghDispatch(t); } catch (e) { return false; }
+    }
+    async function renderGhStatus() {
+        const el = $('adm-gh-status');
+        if (!el) return;
+        const t = await loadGhToken();
+        el.innerHTML = t
+            ? '<span class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>Qoşulub</span> — qrafik yükləyən kimi bildiriş 1–2 dəqiqəyə gedir.'
+            : 'Qoşulmayıb — bildiriş GitHub-un planlı yoxlaması ilə gedir (gecikə bilər). GitHub tokenini bura yapışdırın.';
+        $('adm-gh-del').classList.toggle('hidden', !t);
+    }
+    async function saveGhToken() {
+        const v = $('adm-gh-token').value.trim();
+        const el = $('adm-gh-status');
+        if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(v)) { el.innerHTML = '<span class="text-red-600">Token "github_pat_" ilə başlamalıdır.</span>'; return; }
+        el.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Yoxlanılır…';
+        let okRun = false;
+        try { okRun = await ghDispatch(v); } catch (e) { okRun = false; }
+        if (!okRun) { el.innerHTML = '<span class="text-red-600">Token işləmədi. Repo seçimini və "Actions: Read and write" icazəsini yoxlayın.</span>'; return; }
+        try { await C.cloud.setGithubToken(v); } catch (x) { el.innerHTML = '<span class="text-red-600">' + C.esc(admErrText(x)) + '</span>'; return; }
+        ghToken = v;
+        $('adm-gh-token').value = '';
+        renderGhStatus();
+    }
+    async function deleteGhToken() {
+        const ok = await confirmBox('Ani bildiriş tokeni silinsin? Bildirişlər yenə gedəcək, amma gecikə bilər.', { title: 'Tokeni sil', yes: 'Bəli', no: 'Xeyr' });
+        if (!ok) return;
+        try { await C.cloud.setGithubToken(''); } catch (x) { /* */ }
+        ghToken = '';
+        renderGhStatus();
+    }
+
     async function adminDelete(id) {
         const d = (cloudDocs || []).find(x => x.id === id);
         if (!d) return;
@@ -1199,6 +1254,7 @@
         const ok = await confirmBox('Admin hesabından çıxılsın? Tətbiq adi işçi rejimində davam edəcək.', { title: 'Admin çıxışı', icon: 'fa-right-from-bracket', yes: 'Bəli', no: 'Xeyr' });
         if (!ok) return;
         try { await C.cloud.adminSignOut(); } catch (x) { console.warn(x); }
+        ghToken = null;
         openAdmin();
     }
 
@@ -1337,6 +1393,8 @@
             const d = e.target.closest('[data-adm-del]'); if (d) adminDelete(d.dataset.admDel);
         });
         $('adm-logout').onclick = adminLogout;
+        $('adm-gh-save').onclick = saveGhToken;
+        $('adm-gh-del').onclick = deleteGhToken;
         document.querySelectorAll('#ob-team [data-team]').forEach(b => b.addEventListener('click', () => { obTeam = b.dataset.team; setTeamButtons('#ob-team', obTeam); setOnboardLabels(obTeam); $('ob-team-err').classList.add('hidden'); }));
         document.querySelectorAll('#pf-team [data-team]').forEach(b => b.addEventListener('click', () => {
             state.profile.team = b.dataset.team;

@@ -1,5 +1,9 @@
 # Dəyişikliklər
 
+## 2.4.0 — 05.11.2026 — Ani bildiriş
+- GitHub-un planlı yoxlaması saatlarla gecikə bildiyi üçün: admin qrafiki dərc edən kimi tətbiq bildiriş robotunu (GitHub Actions) dərhal işə salır → bildiriş ~1–2 dəqiqəyə gedir. Planlı yoxlama ehtiyat kimi qalır.
+- GitHub tokeni (yalnız bu repo, "Actions: Read and write") Admin panelində bir dəfə daxil edilir; Firestore `config/github`-da saxlanılır, onu yalnız admin oxuya bilir.
+
 ## 2.3.2 — 05.11.2026
 - "Yığışma qeydi" → **"Yığışma yeri (məs: BOS)"**; artıq məcburi deyil.
 

@@ -146,7 +146,7 @@
         <!-- FOOTER -->
         <footer class="pt-6 pb-2 text-center border-t border-gray-200">
             <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
-            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v2.3.2</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v2.4.0</p>
         </footer>
     </main>
 
@@ -496,6 +496,15 @@
                 <div>
                     <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Paylaşılan qrafiklər</h4>
                     <div id="adm-list" class="space-y-1.5"></div>
+                </div>
+                <div class="border border-gray-100 bg-gray-50 rounded-xl p-3 space-y-2">
+                    <p class="font-semibold text-gray-700"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>Ani bildiriş</p>
+                    <p id="adm-gh-status" class="text-gray-500 leading-relaxed">Yoxlanılır…</p>
+                    <input id="adm-gh-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…" class="w-full border border-gray-200 rounded-xl p-2.5 bg-white text-sm">
+                    <div class="grid grid-cols-2 gap-2 font-semibold">
+                        <button type="button" id="adm-gh-save" class="py-2 rounded-lg bg-blue-600 text-white">Yoxla və saxla</button>
+                        <button type="button" id="adm-gh-del" class="py-2 rounded-lg bg-white border border-red-100 text-red-600">Sil</button>
+                    </div>
                 </div>
                 <button type="button" id="adm-logout" class="w-full border border-red-200 bg-red-50 text-red-600 font-bold py-2.5 rounded-xl active:bg-red-100"><i class="fa-solid fa-right-from-bracket mr-1"></i>Admin hesabından çıx</button>
             </div>

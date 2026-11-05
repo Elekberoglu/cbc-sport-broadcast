@@ -26,6 +26,13 @@ son 24 saatda dərc olunmuş və hələ bildirişi göndərilməmiş versiyalar 
 - Xidmət hesabının hüquqları: Firestore (oxuma/yazma), FCM göndərmə, istifadəçi siyahısını oxuma.
 - GitHub 60 gün fəaliyyəti olmayan repoda planlaşdırılmış işləri dayandırır — belə olsa, Actions → "Cədvəl bildirişi" → **Enable workflow**.
 
+### Ani bildiriş (tövsiyə olunur)
+GitHub planlı işləri saatlarla gecikdirə bilir. Ona görə admin qrafiki dərc edən kimi tətbiq robotu dərhal işə salır:
+1. GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate new token.
+   Repository access: **Only select repositories → cbc-sport-broadcast**; Permissions → **Actions: Read and write**.
+2. Tətbiqdə Admin paneli → **Ani bildiriş** → tokeni yapışdırın → **Yoxla və saxla**.
+Token Firestore `config/github` sənədində saxlanılır (yalnız admin oxuya bilir); tətbiqin kodunda və GitHub-da yoxdur.
+
 ### Bir dəfəlik quraşdırma (Google Cloud Shell)
 ```bash
 PROJECT=cbc-sport-broadcast; SA=cbc-notifier@$PROJECT.iam.gserviceaccount.com

@@ -85,3 +85,11 @@ test('notifications kolleksiyası bağlıdır', async () => {
     await assertFails(getDoc(doc(admin(), 'notifications', 'x')));
     await assertFails(setDoc(doc(admin(), 'notifications', 'x'), { a: 1 }));
 });
+test('config/github: yalnız admin oxuya/yaza bilər', async () => {
+    const t = { token: 'github_pat_TEST_TOKEN_1234567890', updatedAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(admin(), 'config', 'github'), t));
+    await assertSucceeds(getDoc(doc(admin(), 'config', 'github')));
+    await assertFails(getDoc(doc(worker(), 'config', 'github')));
+    await assertFails(setDoc(doc(worker(), 'config', 'github'), t));
+    await assertFails(setDoc(doc(admin(), 'config', 'github'), Object.assign({}, t, { extra: 1 })));
+});

@@ -129,6 +129,17 @@
     }
     function app() { return init().then(r => r.app); }
 
+
+    // ---------- Admin: ani bildiriş üçün GitHub tokeni (config/github — yalnız admin oxuya/yaza bilər) ----------
+    function getGithubToken() {
+        return db().then(({ fs, db: d }) => fs.getDoc(fs.doc(d, 'config', 'github'))).then(x => (x && x.exists() ? (x.data() || {}).token || '' : ''));
+    }
+    function setGithubToken(token) {
+        return db().then(({ fs, db: d }) => token
+            ? fs.setDoc(fs.doc(d, 'config', 'github'), { token, updatedAt: fs.serverTimestamp() })
+            : fs.deleteDoc(fs.doc(d, 'config', 'github')));
+    }
+
     g.CBC = Object.assign(g.CBC || {}, {
         cloud: {
             init,
@@ -136,7 +147,8 @@
             onStatus: fn => { listeners.push(fn); fn(Object.assign({}, status)); },
             adminSignIn, adminSignOut,
             watchSchedules, publishSchedule, deleteSchedule,
-            saveDevice, deleteDevice, app
+            saveDevice, deleteDevice, app,
+            getGithubToken, setGithubToken
         }
     });
 })(window);
