@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "722958292611",
+    "project_id": "cbc-sport-broadcast",
+    "storage_bucket": "cbc-sport-broadcast.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:722958292611:android:0285925908790b5b0d2db6",
+        "android_client_info": {
+          "package_name": "az.cbcsport.broadcast"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWZU76ARV6phKT2V-yLlnzjQPdEq0boFs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

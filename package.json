@@ -1,6 +1,6 @@
 {
   "name": "cbc-sport-broadcast",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "description": "CBC Sport Broadcast — yayım heyəti üçün iş qrafiki (Android və iOS)",
   "scripts": {

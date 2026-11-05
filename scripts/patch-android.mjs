@@ -13,3 +13,10 @@ for (const p of perms) {
 }
 fs.writeFileSync(f, x);
 console.log('AndroidManifest yeniləndi');
+
+// Firebase: google-services.json faylını android/app/ qovluğuna köçür
+// (Capacitor şablonu bu fayl olanda Google Services plaginini avtomatik qoşur)
+if (fs.existsSync('google-services.json')) {
+  fs.copyFileSync('google-services.json', 'android/app/google-services.json');
+  console.log('google-services.json android/app/ qovluğuna köçürüldü');
+}

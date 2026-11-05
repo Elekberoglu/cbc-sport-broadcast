@@ -1,5 +1,14 @@
 # Dəyişikliklər
 
+## 2.1.1 — 05.11.2026 — Firebase qoşulması
+- `google-services.json` layihənin kökündə saxlanılır; `npm run android:init` zamanı `scripts/patch-android.mjs` onu `android/app/` qovluğuna köçürür.
+- Google Services Gradle plagini: Capacitor 6 Android şablonu artıq `com.google.gms:google-services:4.4.0` classpath-ını ehtiva edir və `google-services.json` olduqda plagini avtomatik tətbiq edir — əlavə Gradle dəyişikliyi lazım olmadı.
+- Firebase JS SDK 11.0.2 (rəsmi gstatic CDN, modul formatı) `www/js/cloud.js` ilə yüklənir və inisializasiya olunur; konfiqurasiya `www/js/firebase-config.js` faylındadır.
+- Anonim giriş: tətbiq açılanda arxa planda; əvvəlki anonim sessiya bərpa olunur (hər açılışda yeni istifadəçi yaranmır). İnternet/Firebase əlçatan deyilsə tətbiq yerli rejimdə işləməyə davam edir.
+- Profil pəncərəsində bağlantı vəziyyəti: "Bulud: qoşulub (anonim giriş)".
+- Android application ID dəyişməyib: `az.cbcsport.broadcast`.
+- 36 saat müzakirəsi zamanı səhvən daxil olmuş təsdiqlənməmiş kod geri qaytarıldı (v2.1 davranışı).
+
 ## 2.1.0 — 01.11.2026
 - **Tamamlanma:** çəkiliş başlama vaxtı çatan kimi avtomatik "Tamamlananlar"a keçir (məs. 15:00-da). Başlama saatı yoxdursa yığışma/növbə saatı, heç bir saat yoxdursa günün sonu götürülür.
 - **Statistika:** "Ümumi çəkiliş" altında "X tamamlanıb · Y qarşıdadır"; ayın siyahısında tamamlananlar ✓, qarşıdakılar 🕐 ilə işarələnir.

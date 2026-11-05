@@ -77,6 +77,12 @@ npm run ios:open          # Xcode-da açır → Signing seçin → Run
 - Google Play: Developer hesabı (birdəfəlik $25). Android Studio → *Build → Generate Signed Bundle*.
 - App Store: Apple Developer Program (illik $99). Xcode → *Product → Archive*.
 
+## Firebase
+- Layihə: `cbc-sport-broadcast`; Android paket adı: `az.cbcsport.broadcast`.
+- `google-services.json` (kök qovluq) → qurulmada `android/app/`-a köçürülür; Gradle plagini Capacitor şablonu tərəfindən avtomatik tətbiq olunur.
+- JS SDK: `www/js/firebase-config.js` (konfiqurasiya) + `www/js/cloud.js` (yükləmə, anonim giriş).
+- Firebase Console-da tələb olunur: Authentication → Sign-in method → **Anonymous** aktiv; Web app qeydiyyatı (appId və brauzer API açarı üçün).
+
 ## Qeydlər
 - Məlumatlar telefonun özündə saxlanılır (serversiz). Hər əməkdaş qrafiki öz telefonuna yükləyir.
 - Şəkil formatında qrafik yalnız baxmaq üçün saxlanılır; şəkildən avtomatik oxuma hələ yoxdur — Excel istifadə edin.

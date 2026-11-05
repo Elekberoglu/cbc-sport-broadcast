@@ -1124,8 +1124,21 @@
         }
     }
 
+    function renderCloudStatus(st) {
+        const el = $('cloud-status');
+        if (!el) return;
+        const txt = { idle: 'Bulud: gözləyir', connecting: 'Bulud: qoşulur…', online: 'Bulud: qoşulub (anonim giriş)', error: 'Bulud: qoşulmadı (' + (st.error || 'xəta') + ')', disabled: 'Bulud: konfiqurasiya yoxdur' }[st.state] || 'Bulud: —';
+        el.innerHTML = '<i class="fa-solid ' + (st.state === 'online' ? 'fa-cloud text-emerald-500' : 'fa-cloud') + ' mr-1"></i>' + C.esc(txt);
+    }
+
     function init() {
         bind();
+        // Firebase: arxa planda anonim giriş (tətbiqin işini bloklamır)
+        if (C.cloud) {
+            C.cloud.onStatus(renderCloudStatus);
+            C.cloud.init().catch(e => console.warn('Firebase:', e && (e.code || e.message)));
+            g.addEventListener('online', () => { if (C.cloud.status().state !== 'online') C.cloud.init().catch(() => {}); });
+        }
         applyTheme();
         refresh();
         if (!state.profile.name) showOnboarding();
