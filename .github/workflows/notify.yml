@@ -1,0 +1,35 @@
+# Pulsuz push serveri: hər ~5 dəqiqədən bir yeni dərc olunmuş cədvəli yoxlayır və işçilərə bildiriş göndərir.
+# Açar faylı YOXDUR: GitHub OIDC → Google Workload Identity Federation → cbc-notifier xidmət hesabı.
+# Quraşdırma: docs/PUSH.md → "Pulsuz variant".
+name: Cədvəl bildirişi (push)
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: schedule-notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: notifier
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/722958292611/locations/global/workloadIdentityPools/github/providers/github
+          service_account: cbc-notifier@cbc-sport-broadcast.iam.gserviceaccount.com
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --prefix notifier --no-audit --no-fund --loglevel=error
+      - run: node notifier/notify.mjs
