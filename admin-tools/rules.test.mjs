@@ -67,3 +67,21 @@ test('başqa kolleksiyalar bağlıdır', async () => {
     await assertFails(getDoc(doc(worker(), 'users', 'x')));
     assert.ok(true);
 });
+
+const dev = { token: 'fcm-token-ABCDEFGHIJKLMNOPQRSTUVWXYZ', platform: 'android', team: 'sts', updatedAt: serverTimestamp() };
+test('işçi yalnız öz cihaz tokenini yaza/silə bilir', async () => {
+    await assertSucceeds(setDoc(doc(worker(), 'devices', 'anonUid'), dev));
+    await assertSucceeds(deleteDoc(doc(worker(), 'devices', 'anonUid')));
+    await assertFails(setDoc(doc(worker(), 'devices', 'baskaUid'), dev));
+    await assertFails(setDoc(doc(worker(), 'devices', 'anonUid'), Object.assign({}, dev, { team: 'admin' })));
+    await assertFails(setDoc(doc(worker(), 'devices', 'anonUid'), Object.assign({}, dev, { extra: 1 })));
+    await assertFails(setDoc(doc(guest(), 'devices', 'anonUid'), dev));
+});
+test('cihaz tokenlərini heç kim oxuya bilmir (admin də)', async () => {
+    await assertFails(getDoc(doc(worker(), 'devices', 'anonUid')));
+    await assertFails(getDocs(collection(admin(), 'devices')));
+});
+test('notifications kolleksiyası bağlıdır', async () => {
+    await assertFails(getDoc(doc(admin(), 'notifications', 'x')));
+    await assertFails(setDoc(doc(admin(), 'notifications', 'x'), { a: 1 }));
+});

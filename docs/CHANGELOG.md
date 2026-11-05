@@ -1,5 +1,13 @@
 # Dəyişikliklər
 
+## 2.3.0 — 05.11.2026 — Həftəlik təqvim, nisbi tarixlər, push bildirişi
+- **Avtomatik tamamlanma:** çəkiliş başlama vaxtı çatanda (məs. 16:00-da) yenidən açmadan "Tamamlananlar"a keçir; gecə yarısı və tətbiqə qayıdanda (resume) yenidən hesablanır. Başlama saatı yoxdursa yığışma/növbə saatı götürülür (əvvəlki kimi).
+- **Həftəlik təqvim:** B.E → BAZ, çəkiliş olan günlər qırmızı, bugün yaşıl çərçivə, seçilmiş gün mavi. Günə toxunanda yalnız o günün çəkilişləri; ‹ › ilə həftələr arasında keçid (ay/il keçidləri daxil), başlığa toxunanda cari həftə.
+- **Bugünkü kart:** yaşıl sol zolaq və işıq, altında "🔥 Bugün çəkiliş var" banneri (açıq/qaranlıq rejim).
+- **Nisbi tarix:** "Növbəti" əvəzinə Bugün / Sabah / Birigün / N gün sonra (təqvim gününə görə).
+- **Push bildirişi:** admin qrafiki dərc edəndə Cloud Function (FCM) işçilərə bir dəfə "📅 Həftəlik çəkiliş cədvəli yeniləndi" göndərir; toxunanda həftəlik cədvəl açılır. Quraşdırma: `docs/PUSH.md` (Blaze planı tələb olunur).
+- Yığışma xatırlatmaları dəyişməyib.
+
 ## 2.2.0 — 05.11.2026 — Admin girişi və paylaşılan qrafiklər
 - Giriş ekranının aşağısında və Profildə kiçik **"Admin girişi"** keçidi: e-poçt + şifrə ilə Firebase Authentication.
 - Admin hüququ yalnız serverdə: Custom Claim `admin: true` (`admin-tools/set-admin.mjs`, Firebase Admin SDK). Tətbiq UID yoxlamır.

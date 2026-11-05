@@ -92,6 +92,20 @@
                 <h2 id="list-title" class="text-sm font-bold text-gray-500 uppercase tracking-wider">Həftəlik Çəkiliş Cədvəli</h2>
             </div>
 
+            <!-- HƏFTƏLİK TƏQVİM (B.E → BAZ) -->
+            <div id="week-strip" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-2.5">
+                <div class="flex items-center justify-between mb-2">
+                    <button id="wk-prev" class="w-8 h-8 rounded-lg text-gray-500 active:bg-gray-100" aria-label="Əvvəlki həftə"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button id="wk-label" class="text-xs font-bold text-gray-700 px-2 py-1 rounded-lg" aria-label="Bu həftəyə qayıt"></button>
+                    <button id="wk-next" class="w-8 h-8 rounded-lg text-gray-500 active:bg-gray-100" aria-label="Növbəti həftə"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div id="wk-days" class="grid grid-cols-7 gap-1.5" role="group" aria-label="Həftənin günləri"></div>
+                <div id="wk-filter" class="hidden items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100 text-[11px]">
+                    <span id="wk-filter-text" class="font-semibold text-gray-700"></span>
+                    <button id="wk-all" class="font-bold text-blue-600 shrink-0">Hamısını göstər</button>
+                </div>
+            </div>
+
             <div id="schedule-list" class="space-y-3"></div>
 
             <!-- SMART REMINDER -->
@@ -132,7 +146,7 @@
         <!-- FOOTER -->
         <footer class="pt-6 pb-2 text-center border-t border-gray-200">
             <p class="text-[11px] text-gray-500 font-medium">Bu tətbiq Hüseynov Tamerlan tərəfindən hazırlanmışdır</p>
-            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v2.2.0</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">CBC Sport Broadcast · v2.3.0</p>
         </footer>
     </main>
 
@@ -498,6 +512,7 @@
     <script src="js/weather.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/cloud.js"></script>
+    <script src="js/push.js"></script>
     <script src="js/notify.js"></script>
     <script src="js/timepicker.js"></script>
     <script src="js/datepicker.js"></script>

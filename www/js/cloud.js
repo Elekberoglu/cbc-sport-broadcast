@@ -116,13 +116,27 @@
         return db().then(({ fs, db: d }) => fs.deleteDoc(fs.doc(d, 'schedules', id)));
     }
 
+
+    // ---------- Push: cihaz tokeni (yalnız öz sənədini yaza/silə bilər, oxumaq olmaz) ----------
+    function saveDevice(token, platform, team) {
+        return db().then(({ fs, db: d }) => {
+            if (!status.uid) throw new Error('no-user');
+            return fs.setDoc(fs.doc(d, 'devices', status.uid), { token, platform, team: team === 'operator' ? 'operator' : 'sts', updatedAt: fs.serverTimestamp() });
+        });
+    }
+    function deleteDevice() {
+        return db().then(({ fs, db: d }) => status.uid ? fs.deleteDoc(fs.doc(d, 'devices', status.uid)) : null);
+    }
+    function app() { return init().then(r => r.app); }
+
     g.CBC = Object.assign(g.CBC || {}, {
         cloud: {
             init,
             status: () => Object.assign({}, status),
             onStatus: fn => { listeners.push(fn); fn(Object.assign({}, status)); },
             adminSignIn, adminSignOut,
-            watchSchedules, publishSchedule, deleteSchedule
+            watchSchedules, publishSchedule, deleteSchedule,
+            saveDevice, deleteDevice, app
         }
     });
 })(window);

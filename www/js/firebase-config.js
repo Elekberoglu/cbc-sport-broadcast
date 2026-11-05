@@ -13,3 +13,7 @@ window.CBC_FIREBASE_CONFIG = {
 
 /* Firebase JS SDK versiyası (gstatic CDN, modul formatı) */
 window.CBC_FIREBASE_SDK = '11.0.2';
+
+// iPhone/brauzer üçün Web Push açarı (VAPID). Firebase Console → Project settings → Cloud Messaging →
+// Web Push certificates → Generate key pair → "Key pair" dəyərini bura yazın. Boşdursa, veb push söndürülüdür.
+window.CBC_FCM_VAPID_KEY = '';

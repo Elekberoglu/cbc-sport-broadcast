@@ -83,6 +83,7 @@ npm run ios:open          # Xcode-da açır → Signing seçin → Run
 - JS SDK: `www/js/firebase-config.js` (konfiqurasiya) + `www/js/cloud.js` (yükləmə, anonim giriş).
 - Firebase Console-da tələb olunur: Authentication → Sign-in method → **Anonymous** aktiv; Web app qeydiyyatı (appId və brauzer API açarı üçün).
 - **Admin və paylaşılan qrafiklər:** Email/Password girişi, Firestore, `firestore.rules`, `admin-tools/set-admin.mjs` — bax `docs/ADMIN.md`.
+- **Push bildirişi (cədvəl yenilənəndə):** `functions/` (Cloud Function), `www/js/push.js` — bax `docs/PUSH.md`.
 
 ## Qeydlər
 - Məlumatlar telefonun özündə saxlanılır (serversiz). Hər əməkdaş qrafiki öz telefonuna yükləyir.

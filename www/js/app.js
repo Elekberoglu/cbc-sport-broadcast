@@ -165,10 +165,10 @@
             : '<span class="bg-red-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm shrink-0">CANLI</span>';
         const stateBadge = done
             ? '<span class="text-[10px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check mr-1"></i>Tamamlandı</span>'
-            : (opts.next ? '<span class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full">Növbəti</span>' : (today ? '<span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">Bu gün</span>' : ''));
+            : '';
 
         return '' +
-        '<div' + (op ? ' data-card="' + item.id + '"' : '') + ' class="' + (op ? 'card-tap cursor-pointer ' : '') + 'bg-white rounded-2xl p-4 border transition relative ' + (done ? 'opacity-60 bg-gray-50 border-gray-200' : (opts.next ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 shadow-sm')) + '">' +
+        '<div' + (op ? ' data-card="' + item.id + '"' : '') + ' class="' + (op ? 'card-tap cursor-pointer ' : '') + 'bg-white rounded-2xl p-4 border transition relative ' + (done ? 'opacity-60 bg-gray-50 border-gray-200' : (today ? 'card-today' : (opts.next ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 shadow-sm'))) + '">' +
             '<div class="flex justify-between items-start mb-2 gap-2">' +
                 '<div class="flex items-center flex-wrap gap-1.5 min-w-0">' +
                     '<span class="text-xs font-bold text-gray-500 whitespace-nowrap"><i class="fa-regular fa-calendar mr-1"></i>' + C.esc(C.fmtDate(item.date)) + ', ' + C.esc(C.weekday(item.date)) + '</span>' +
@@ -206,6 +206,7 @@
                     '<span class="text-base font-black text-gray-900">' + C.esc(item.start || '—') + '</span>' +
                 '</div>' +
             '</div>' +
+            (done ? '' : dayBannerHTML(item)) +
         '</div>';
     }
 
@@ -228,7 +229,7 @@
             : '<span class="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-building mr-1"></i>Bakı</span>');
         const stateBadge = done
             ? '<span class="text-[10px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check mr-1"></i>Tamamlandı</span>'
-            : (opts.next ? '<span class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full">Növbəti</span>' : (today ? '<span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">Bu gün</span>' : ''));
+            : '';
         const typeBadge = item.detailed ? (item.type === 'yazı'
             ? '<span class="bg-gray-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm shrink-0">YAZI</span>'
             : '<span class="bg-red-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm shrink-0">CANLI</span>') : '';
@@ -244,7 +245,7 @@
             : '<div class="bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 text-center"><span class="text-[10px] text-blue-600 uppercase font-bold tracking-wide block mb-0.5">' + (item.kind === 'sts' ? 'Yığışma Saatı' : 'Növbə saatı') + '</span>' +
                 '<span class="text-base font-black text-blue-900">' + C.esc(item.gather || 'Göstərilməyib') + '</span>' +
                 (item.gatherNote ? ' <span class="text-[10px] font-black text-blue-700 bg-blue-100 rounded px-1 align-middle">' + C.esc(item.gatherNote) + '</span>' : '') + '</div>';
-        return '<div data-card="' + item.id + '" class="card-tap cursor-pointer bg-white rounded-2xl p-4 border transition relative ' + (done ? 'opacity-60 bg-gray-50 border-gray-200' : (opts.next ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 shadow-sm')) + '">' +
+        return '<div data-card="' + item.id + '" class="card-tap cursor-pointer bg-white rounded-2xl p-4 border transition relative ' + (done ? 'opacity-60 bg-gray-50 border-gray-200' : (today ? 'card-today' : (opts.next ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 shadow-sm'))) + '">' +
             '<div class="flex justify-between items-start mb-2 gap-2">' +
                 '<div class="flex items-center flex-wrap gap-1.5 min-w-0">' +
                     '<span class="text-xs font-bold text-gray-500 whitespace-nowrap"><i class="fa-regular fa-calendar mr-1"></i>' + C.esc(C.fmtDate(item.date)) + ', ' + C.esc(C.weekday(item.date)) + '</span>' +
@@ -257,6 +258,7 @@
             (item.flash ? '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-bolt mr-1 text-amber-500"></i>Matç öncəsi/sonrası: <span class="font-semibold text-gray-700">' + C.esc(item.flash) + '</span></p>' : '') +
             (showWx ? '<div class="weather text-xs text-sky-700 bg-sky-50 px-2.5 py-2 rounded-xl my-2 border border-sky-100 font-medium" data-wx="' + item.id + '">' + weatherHTML(item) + '</div>' : '') +
             '<div class="mt-3 pt-2 border-t border-gray-100">' + timeBoxes + '</div>' +
+            (done ? '' : dayBannerHTML(item)) +
             (!item.detailed && !done ? '<p class="text-[10px] text-indigo-500 text-center mt-2"><i class="fa-solid fa-hand-pointer mr-1"></i>Toxunun — yer, saat və digər məlumatları əlavə edin</p>' : '') +
         '</div>';
     }
@@ -308,13 +310,114 @@
         });
     }
 
+
+    // ---------- Nisbi tarix (təqvim günü ilə, 24 saatla yox) ----------
+    function dayDiff(iso) {
+        const d = C.parseISO(iso), t = C.parseISO(C.todayISO());
+        if (!d || !t) return null;
+        return Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 864e5);
+    }
+    function relLabel(iso) {
+        const n = dayDiff(iso);
+        if (n === null || n < 0) return '';
+        return n === 0 ? 'Bugün' : n === 1 ? 'Sabah' : n === 2 ? 'Birigün' : n + ' gün sonra';
+    }
+    function dayBannerHTML(item) {
+        const n = dayDiff(item.date);
+        if (n === null || n < 0) return '';
+        if (n === 0) return '<div class="day-banner day-banner-today">🔥 Bugün ' + (item.source === 'operator' && !item.detailed && item.kind !== 'sts' ? 'növbə' : 'çəkiliş') + ' var</div>';
+        return '<div class="day-banner day-banner-future">⏳ ' + relLabel(item.date) + '</div>';
+    }
+
+    // ---------- Həftəlik təqvim ----------
+    const WK_SHORT = ['B.E', 'Ç.A', 'ÇƏR', 'C.A', 'CÜM', 'ŞƏN', 'BAZ'];
+    const MON_GEN = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avqust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'];
+    function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+    function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+    let weekStart = mondayOf(new Date());
+    let selectedDay = null;
+    function weekLabel(a, b) {
+        const y = a.getFullYear() !== b.getFullYear();
+        if (a.getMonth() === b.getMonth() && !y) return C.pad(a.getDate()) + ' – ' + C.pad(b.getDate()) + ' ' + MON_GEN[b.getMonth()] + ' ' + b.getFullYear();
+        return C.pad(a.getDate()) + ' ' + MON_GEN[a.getMonth()] + (y ? ' ' + a.getFullYear() : '') + ' – ' + C.pad(b.getDate()) + ' ' + MON_GEN[b.getMonth()] + ' ' + b.getFullYear();
+    }
+    function renderWeek(mine) {
+        const days = new Set(mine.map(s => s.date));
+        const today = C.todayISO();
+        const end = addDays(weekStart, 6);
+        const thisWeek = C.isoDate(weekStart) === C.isoDate(mondayOf(new Date()));
+        $('wk-label').innerHTML = (thisWeek ? '' : '<i class="fa-solid fa-rotate-left mr-1 text-blue-600"></i>') + weekLabel(weekStart, end);
+        $('wk-days').innerHTML = WK_SHORT.map((nm, i) => {
+            const d = addDays(weekStart, i), iso = C.isoDate(d);
+            const cls = 'wk-day' + (days.has(iso) ? ' wk-has' : '') + (iso === today ? ' wk-today' : '') + (iso === selectedDay ? ' wk-sel' : '');
+            return '<button data-day="' + iso + '" class="' + cls + '" aria-pressed="' + (iso === selectedDay) + '" aria-label="' + C.esc(C.fmtDate(iso, true)) + (days.has(iso) ? ', çəkiliş var' : '') + '">' +
+                '<span class="wk-name">' + nm + '</span><span class="wk-num">' + C.pad(d.getDate()) + '</span></button>';
+        }).join('');
+        const f = $('wk-filter');
+        f.classList.toggle('hidden', !selectedDay); f.classList.toggle('flex', !!selectedDay);
+        if (selectedDay) {
+            const n = mine.filter(s => s.date === selectedDay).length;
+            $('wk-filter-text').textContent = C.fmtDate(selectedDay, true) + (relLabel(selectedDay) ? ' · ' + relLabel(selectedDay) : '') + ' — ' + (n ? n + ' çəkiliş' : 'çəkiliş yoxdur');
+        }
+    }
+    function bindWeek() {
+        $('wk-days').addEventListener('click', e => {
+            const b = e.target.closest('[data-day]');
+            if (!b) return;
+            selectedDay = selectedDay === b.dataset.day ? null : b.dataset.day;
+            renderSchedules();
+        });
+        $('wk-prev').onclick = () => { weekStart = addDays(weekStart, -7); selectedDay = null; renderSchedules(); };
+        $('wk-next').onclick = () => { weekStart = addDays(weekStart, 7); selectedDay = null; renderSchedules(); };
+        $('wk-label').onclick = () => { weekStart = mondayOf(new Date()); selectedDay = null; renderSchedules(); };
+        $('wk-all').onclick = () => { selectedDay = null; renderSchedules(); };
+    }
+    /** Həftəlik ekrana keçid (bildirişə toxunanda): bu həftə, bugün seçilmədən */
+    function showWeekly() {
+        switchTab('my');
+        weekStart = mondayOf(new Date()); selectedDay = null;
+        renderSchedules();
+        const el = $('week-strip'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ---------- Avtomatik yenilənmə: başlama vaxtı çatanda, gecə yarısı, tətbiqə qayıdanda ----------
+    let liveTimer = null, liveSig = '';
+    function computeLiveSig() {
+        return C.todayISO() + '|' + myShoots().filter(s => status(s) === 'completed').map(s => s.id).sort().join(',');
+    }
+    function scheduleLive() {
+        clearTimeout(liveTimer);
+        const now = Date.now();
+        let next = C.parseISO(C.todayISO()); next.setDate(next.getDate() + 1); // gecə yarısı
+        let at = next.getTime();
+        myShoots().forEach(s => {
+            const t = C.dateTime(s.date, s.start || s.gather || '23:59');
+            if (t && t.getTime() > now && t.getTime() < at) at = t.getTime();
+        });
+        // brauzer taymerləri arxa planda gecikə bilər — ən gec 60 saniyədən bir yoxla
+        liveTimer = setTimeout(liveCheck, Math.max(1000, Math.min(at - now + 500, 60000)));
+    }
+    function liveCheck() {
+        const sig = computeLiveSig();
+        if (sig !== liveSig) { liveSig = sig; renderSchedules(); if (currentTab === 'team') renderTeam(); syncNotifications(); }
+        scheduleLive();
+    }
+
     function renderSchedules() {
         const list = $('schedule-list');
-        const mine = myShoots();
+        const allMineList = myShoots();
+        renderWeek(allMineList);
+        liveSig = computeLiveSig();
+        scheduleLive();
+        const mine = selectedDay ? allMineList.filter(s => s.date === selectedDay) : allMineList;
         const active = mine.filter(s => status(s) === 'active').sort((a, b) => sortKey(a) - sortKey(b));
         const done = mine.filter(s => status(s) === 'completed').sort((a, b) => sortKey(b) - sortKey(a));
 
-        if (!mine.length) {
+        if (!mine.length && selectedDay && allMineList.length) {
+            list.innerHTML = '<div class="bg-white rounded-2xl p-5 text-center border border-dashed border-gray-300">' +
+                '<i class="fa-regular fa-calendar text-2xl text-gray-300 mb-1.5"></i>' +
+                '<p class="text-sm font-semibold text-gray-600">' + C.esc(C.fmtDate(selectedDay, true)) + ' üçün çəkiliş yoxdur</p></div>';
+        } else if (!mine.length) {
             list.innerHTML = '<div class="bg-white rounded-2xl p-6 text-center border border-dashed border-gray-300">' +
                 '<i class="fa-regular fa-calendar-xmark text-3xl text-gray-300 mb-2"></i>' +
                 '<p class="text-sm font-semibold text-gray-600">Hələ çəkiliş yoxdur</p>' +
@@ -757,6 +860,7 @@
         $('onboard').classList.add('hidden');
         refresh();
         syncCloudSchedules();
+        initPush(true);
         toast('Xoş gəldiniz, ' + (obTeam === 'operator' ? name : name.split(' ').slice(-1)[0]) + '! İndi qrafiki yükləyin.', 3500);
     }
 
@@ -1099,6 +1203,17 @@
         openAdmin();
     }
 
+    // ---------- Push: admin cədvəli yeniləyəndə bildiriş (server göndərir) ----------
+    function initPush(ask) {
+        if (!C.push || !state.profile.name) return;
+        C.push.init({
+            team,
+            ask,
+            onOpen: () => { startCloudSync(); showWeekly(); },
+            onForeground: () => { startCloudSync(); }
+        });
+    }
+
     // ---------- Bildirişlər ----------
     async function syncNotifications() {
         const next = await C.notify.reschedule(myShoots(), state.notify.enabled);
@@ -1117,6 +1232,7 @@
             state.notify.enabled = true;
             save();
             await syncNotifications();
+            initPush(true);
             toast('Bildirişlər aktivdir');
         } else {
             state.notify.enabled = false;
@@ -1211,6 +1327,7 @@
         $('add-shoot').onclick = () => openEdit(null);
         $('clear-all').onclick = clearAll;
         $('onboard-form').onsubmit = submitOnboarding;
+        bindWeek();
         $('ob-admin').onclick = openAdmin;
         $('pf-admin').onclick = () => { closeModal('profile-modal'); openAdmin(); };
         $('adm-login').onsubmit = adminLogin;
@@ -1225,7 +1342,7 @@
         document.querySelectorAll('#pf-team [data-team]').forEach(b => b.addEventListener('click', () => {
             state.profile.team = b.dataset.team;
             state.profile.opAlias = b.dataset.team === 'operator' ? state.profile.name : '';
-            save(); applyTeamUI(); refresh(); syncCloudSchedules();
+            save(); applyTeamUI(); refresh(); syncCloudSchedules(); if (C.push) C.push.save();
             toast(b.dataset.team === 'operator' ? 'Komanda: Operator' : 'Komanda: STS heyəti');
         }));
         $('ob-name').addEventListener('input', () => { $('ob-err').classList.add('hidden'); $('ob-name').classList.remove('field-error'); });
@@ -1259,6 +1376,7 @@
         $('logout').onclick = async () => {
             const ok = await confirmBox('Çıxış etmək istəyirsiniz? Profiliniz və cədvəliniz bu telefondan silinəcək.', { title: 'Çıxış', icon: 'fa-right-from-bracket', yes: 'Bəli', no: 'Xeyr' });
             if (!ok) return;
+            if (C.push) C.push.unregister(); // bu cihaz artıq cədvəl bildirişi almasın
             const theme = state.theme;
             state = defaultState();
             state.theme = theme;
@@ -1312,11 +1430,17 @@
         if (C.cloud) {
             C.cloud.onStatus(renderCloudStatus);
             C.cloud.init().then(startCloudSync).catch(e => console.warn('Firebase:', e && (e.code || e.message)));
+            initPush(true);
             g.addEventListener('online', () => { if (C.cloud.status().state !== 'online') C.cloud.init().then(startCloudSync).catch(() => {}); else startCloudSync(); });
         }
         applyTheme();
         refresh();
+        // Tətbiqə qayıdanda (fon → ön plan) statusları və tarixləri yenidən hesabla
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) liveCheck(); });
+        const CapApp = g.Capacitor && g.Capacitor.Plugins && g.Capacitor.Plugins.App;
+        if (CapApp && CapApp.addListener) CapApp.addListener('resume', () => liveCheck());
         if (!state.profile.name) showOnboarding();
+        else if (/[?&]view=week\b/.test(location.search)) showWeekly(); // veb bildirişinə toxunanda
         const SS = g.Capacitor && g.Capacitor.Plugins && g.Capacitor.Plugins.SplashScreen;
         if (SS) setTimeout(() => SS.hide(), 300);
         if ('serviceWorker' in navigator && !(g.Capacitor && g.Capacitor.isNativePlatform && g.Capacitor.isNativePlatform()) && location.protocol === 'https:') {

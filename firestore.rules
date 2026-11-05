@@ -43,6 +43,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Push bildirişi üçün cihaz tokeni: hər istifadəçi yalnız ÖZ sənədini yaza/silə bilər, heç kim oxuya bilməz.
+    // Tokenləri yalnız server (Cloud Function, Admin SDK) oxuyur.
+    match /devices/{uid} {
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['token', 'platform', 'team', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['token', 'platform', 'team', 'updatedAt'])
+        && request.resource.data.token is string
+        && request.resource.data.token.size() > 20 && request.resource.data.token.size() < 4096
+        && request.resource.data.platform in ['android', 'ios', 'web']
+        && request.resource.data.team in ['sts', 'operator']
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // notifications/{versiya} — yalnız server istifadə edir (aşağıdakı ümumi qadağa ilə bağlıdır)
+
     // Qalan hər şey bağlıdır
     match /{document=**} {
       allow read, write: if false;
