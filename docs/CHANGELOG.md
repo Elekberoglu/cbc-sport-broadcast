@@ -1,5 +1,8 @@
 # Dəyişikliklər
 
+## 2.3.1 — 05.11.2026
+- iPhone (veb-tətbiq) üçün Web Push açarı (VAPID) əlavə olundu: "Ağıllı xatırlatma" yandırılanda cədvəl bildirişləri də aktivləşir (iOS 16.4+, ana ekrandan açılan tətbiq).
+
 ## 2.3.0 — 05.11.2026 — Həftəlik təqvim, nisbi tarixlər, push bildirişi
 - **Avtomatik tamamlanma:** çəkiliş başlama vaxtı çatanda (məs. 16:00-da) yenidən açmadan "Tamamlananlar"a keçir; gecə yarısı və tətbiqə qayıdanda (resume) yenidən hesablanır. Başlama saatı yoxdursa yığışma/növbə saatı götürülür (əvvəlki kimi).
 - **Həftəlik təqvim:** B.E → BAZ, çəkiliş olan günlər qırmızı, bugün yaşıl çərçivə, seçilmiş gün mavi. Günə toxunanda yalnız o günün çəkilişləri; ‹ › ilə həftələr arasında keçid (ay/il keçidləri daxil), başlığa toxunanda cari həftə.
