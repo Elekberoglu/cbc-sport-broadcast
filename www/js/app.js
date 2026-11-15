@@ -859,6 +859,7 @@
         $('onboard').classList.add('hidden');
         refresh();
         syncCloudSchedules();
+        startCloudSync();
         initPush(true);
         toast('Xoş gəldiniz, ' + (obTeam === 'operator' ? name : name.split(' ').slice(-1)[0]) + '! İndi qrafiki yükləyin.', 3500);
     }
@@ -1042,11 +1043,19 @@
     // ---------- Bulud qrafikləri: admin yükləyir, işçilərdə avtomatik yenilənir ----------
     let cloudDocs = null;         // Firestore-dakı paylaşılan qrafiklər (son snapshot)
     let cloudWatching = false;
+    let cloudStop = null, watchUid = null;
     function startCloudSync() {
         if (cloudWatching || !C.cloud) return;
         cloudWatching = true;
-        C.cloud.watchSchedules(list => { cloudDocs = list; syncCloudSchedules(); renderAdminList(); },
-            err => { cloudWatching = false; console.warn('Firestore:', err && (err.code || err.message)); });
+        watchUid = C.cloud.status().uid;
+        cloudStop = C.cloud.watchSchedules(list => { cloudDocs = list; syncCloudSchedules(); renderAdminList(); },
+            err => { cloudWatching = false; cloudStop = null; console.warn('Firestore:', err && (err.code || err.message)); });
+    }
+    /** Giriş dəyişəndə (admin → işçi və s.) Firestore dinləyicisi kəsilir — yeni istifadəçi ilə yenidən başlat */
+    function restartCloudSync() {
+        if (cloudStop) { try { cloudStop(); } catch (e) { /* */ } }
+        cloudStop = null; cloudWatching = false;
+        startCloudSync();
     }
     /** Buluddakı yeni/yenilənmiş qrafikləri mövcud idxal məntiqi ilə (versiya, tarixçə) tətbiq edir */
     function syncCloudSchedules() {
@@ -1486,6 +1495,7 @@
         // Firebase: arxa planda anonim giriş (tətbiqin işini bloklamır)
         if (C.cloud) {
             C.cloud.onStatus(renderCloudStatus);
+            C.cloud.onStatus(st => { if (st.state === 'online' && st.uid && (st.uid !== watchUid || !cloudWatching)) restartCloudSync(); });
             C.cloud.init().then(startCloudSync).catch(e => console.warn('Firebase:', e && (e.code || e.message)));
             initPush(true);
             g.addEventListener('online', () => { if (C.cloud.status().state !== 'online') C.cloud.init().then(startCloudSync).catch(() => {}); else startCloudSync(); });

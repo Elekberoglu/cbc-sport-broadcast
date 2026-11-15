@@ -1,5 +1,8 @@
 # Dəyişikliklər
 
+## 2.4.1 — 15.11.2026
+- **Düzəliş:** admin hesabından çıxanda buluddan qrafik dinləmə dayanırdı və yeni qrafiklər o telefona gəlmirdi. İndi giriş dəyişən kimi (admin ↔ işçi) dinləmə yenidən başlayır.
+
 ## 2.4.0 — 05.11.2026 — Ani bildiriş
 - GitHub-un planlı yoxlaması saatlarla gecikə bildiyi üçün: admin qrafiki dərc edən kimi tətbiq bildiriş robotunu (GitHub Actions) dərhal işə salır → bildiriş ~1–2 dəqiqəyə gedir. Planlı yoxlama ehtiyat kimi qalır.
 - GitHub tokeni (yalnız bu repo, "Actions: Read and write") Admin panelində bir dəfə daxil edilir; Firestore `config/github`-da saxlanılır, onu yalnız admin oxuya bilir.
