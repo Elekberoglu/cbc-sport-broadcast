@@ -1042,13 +1042,19 @@
 
     // ---------- Bulud qrafikləri: admin yükləyir, işçilərdə avtomatik yenilənir ----------
     let cloudDocs = null;         // Firestore-dakı paylaşılan qrafiklər (son snapshot)
+    let cloudConfirmed = false;   // son siyahı serverdən gəlib (keşdən yox)
     let cloudWatching = false;
     let cloudStop = null, watchUid = null;
     function startCloudSync() {
         if (cloudWatching || !C.cloud) return;
         cloudWatching = true;
         watchUid = C.cloud.status().uid;
-        cloudStop = C.cloud.watchSchedules(list => { cloudDocs = list; syncCloudSchedules(); renderAdminList(); },
+        cloudStop = C.cloud.watchSchedules((list, fromCache) => {
+            // İnternet yoxdursa boş/natamam siyahı gəlir — onunla heç nəyi silmə, mövcud cədvəl qalsın
+            if (fromCache && cloudDocs) { list.forEach(d => { if (!cloudDocs.some(x => x.id === d.id)) cloudDocs.push(d); }); }
+            else { cloudDocs = list; cloudConfirmed = !fromCache; }
+            syncCloudSchedules(); renderAdminList();
+        },
             err => { cloudWatching = false; cloudStop = null; console.warn('Firestore:', err && (err.code || err.message)); });
     }
     /** Giriş dəyişəndə (admin → işçi və s.) Firestore dinləyicisi kəsilir — yeni istifadəçi ilə yenidən başlat */
@@ -1063,8 +1069,8 @@
         const applied = state.meta.cloud = state.meta.cloud || {};
         const want = team() === 'operator' ? 'operator' : 'main';
         let added = 0, removed = 0;
-        // Admin buluddan silibsə, həmin qrafikdən gələn çəkilişlər də silinir
-        Object.keys(applied).forEach(id => {
+        // Admin buluddan silibsə, həmin qrafikdən gələn çəkilişlər də silinir — yalnız serverdən təsdiqlənmiş siyahı ilə
+        if (cloudConfirmed) Object.keys(applied).forEach(id => {
             if (cloudDocs.some(d => d.id === id)) return;
             const n = state.shoots.length;
             state.shoots = state.shoots.filter(s => s.cloudId !== id);

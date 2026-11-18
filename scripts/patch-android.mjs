@@ -5,6 +5,8 @@ let x = fs.readFileSync(f, 'utf8');
 const perms = [
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.SCHEDULE_EXACT_ALARM',
+  // Android 13+: dəqiq vaxtlı xatırlatma icazəsi avtomatik verilir (Android 14-də SCHEDULE_EXACT_ALARM standart olaraq bağlıdır)
+  'android.permission.USE_EXACT_ALARM',
   'android.permission.RECEIVE_BOOT_COMPLETED',
   'android.permission.WAKE_LOCK'
 ];

@@ -1,5 +1,9 @@
 # Dəyişikliklər
 
+## 2.4.2 — 18.11.2026
+- **Düzəliş:** internet olmayanda Firestore keşdən boş siyahı qaytarırdı və tətbiq bunu "admin qrafiki silib" kimi qəbul edib cədvəli (və onun xatırlatmalarını) telefondan silirdi. İndi silmə yalnız serverdən təsdiqlənmiş siyahı ilə olur; oflayn cədvəl yerində qalır.
+- Android 13+: dəqiq vaxtlı xatırlatma üçün `USE_EXACT_ALARM` icazəsi.
+
 ## 2.4.1 — 15.11.2026
 - **Düzəliş:** admin hesabından çıxanda buluddan qrafik dinləmə dayanırdı və yeni qrafiklər o telefona gəlmirdi. İndi giriş dəyişən kimi (admin ↔ işçi) dinləmə yenidən başlayır.
 

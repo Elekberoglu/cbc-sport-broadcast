@@ -97,10 +97,12 @@
         let unsub = null, stopped = false;
         db().then(({ fs, db: d }) => {
             if (stopped) return;
-            unsub = fs.onSnapshot(fs.collection(d, 'schedules'), snap => {
+            // includeMetadataChanges: internet qayıdanda serverdən təsdiqlənmiş snapshot da gəlsin
+            unsub = fs.onSnapshot(fs.collection(d, 'schedules'), { includeMetadataChanges: true }, snap => {
                 const list = [];
                 snap.forEach(x => { const v = x.data() || {}; list.push(Object.assign({}, v, { id: x.id, uploadedAt: toMs(v.uploadedAt) })); });
-                cb(list);
+                // fromCache: internet yoxdur — siyahı natamam/boş ola bilər, ona görə silmə üçün etibarlı deyil
+                cb(list, !!(snap.metadata && snap.metadata.fromCache));
             }, err => onErr && onErr(err));
         }).catch(err => onErr && onErr(err));
         return () => { stopped = true; if (unsub) unsub(); };
