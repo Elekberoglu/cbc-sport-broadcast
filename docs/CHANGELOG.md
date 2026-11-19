@@ -1,5 +1,9 @@
 # Dəyişikliklər
 
+## 2.4.3 — 19.11.2026
+- **Düzəliş:** bütün APK-ların daxili versiya nömrəsi (versionCode) 1 idi — Honor kimi telefonlar yeniləməni "artıq quraşdırılıb" deyib quraşdırmırdı. İndi hər yığımın nömrəsi böyüyür, versionName = tətbiqin versiyası.
+- APK hər yığımda GitHub Releases-ə yüklənir: birbaşa link `releases/latest/download/CBC-Sport-Broadcast.apk`.
+
 ## 2.4.2 — 18.11.2026
 - **Düzəliş:** internet olmayanda Firestore keşdən boş siyahı qaytarırdı və tətbiq bunu "admin qrafiki silib" kimi qəbul edib cədvəli (və onun xatırlatmalarını) telefondan silirdi. İndi silmə yalnız serverdən təsdiqlənmiş siyahı ilə olur; oflayn cədvəl yerində qalır.
 - Android 13+: dəqiq vaxtlı xatırlatma üçün `USE_EXACT_ALARM` icazəsi.
