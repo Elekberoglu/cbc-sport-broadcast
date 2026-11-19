@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   android:
     name: Android APK
@@ -32,3 +35,10 @@ jobs:
         with:
           name: CBC-Sport-Broadcast-android
           path: CBC-Sport-Broadcast.apk
+      - name: Publish to Releases (direct download link, no login needed)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          gh release delete "v$V" -y --cleanup-tag 2>/dev/null || true
+          gh release create "v$V" CBC-Sport-Broadcast.apk --title "CBC Sport Broadcast v$V" --notes "Android APK — telefona yükləyin və köhnənin üstünə quraşdırın." --latest
